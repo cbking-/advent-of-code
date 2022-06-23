@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Combinatorics.Collections;
 
 var adventType = typeof(AdventOfCode);
 
@@ -67,45 +68,23 @@ public static class AdventOfCode
         public string DestinationWire { get; set; } = string.Empty;
     }
 
-    public class TSPVertex
+    public class TSPVertex : IComparable
     {
         public string City { get; set; } = string.Empty;
 
         public bool Visited { get; set; } = false;
 
         public Dictionary<string, int> Neighbors { get; set; } = new Dictionary<string, int>();
-    }
 
-    //https://stackoverflow.com/a/15150493/17400290
-    public static IEnumerable<IEnumerable<T>> Permute<T>(this IEnumerable<T> input)
-    {
-        if (input == null)
+        public int CompareTo(object? obj)
         {
-            yield break;
-        }
+            if (obj == null) return 1;
 
-        var list = input.ToList();
-
-        if (!list.Any())
-        {
-            yield return Enumerable.Empty<T>();
-        }
-        else
-        {
-            var startingElementIndex = 0;
-
-            foreach (var startingElement in list)
-            {
-                var index = startingElementIndex;
-                var remainingItems = list.Where((e, i) => i != index);
-
-                foreach (var permutationOfRemainder in remainingItems.Permute())
-                {
-                    yield return permutationOfRemainder.Prepend(startingElement);
-                }
-
-                startingElementIndex++;
-            }
+            TSPVertex? otherVertex = obj as TSPVertex;
+            if (otherVertex != null)
+                return this.City.CompareTo(otherVertex.City);
+            else
+                throw new ArgumentException("Object is not a Temperature");
         }
     }
 
@@ -151,45 +130,10 @@ public static class AdventOfCode
         public int Calories { get; set; } = 0;
     }
 
-    //https://rosettacode.org/wiki/Combinations_with_repetitions#C.23
-    public static List<List<T>> GenerateCombinations<T>(List<T> combinationList, int selectionSize)
-    {
-        var combinations = new List<List<T>>();
-
-        if (selectionSize == 0)
-        {
-            var emptyCombination = new List<T>();
-            combinations.Add(emptyCombination);
-
-            return combinations;
-        }
-
-        if (combinationList.Count == 0)
-        {
-            return combinations;
-        }
-
-        T head = combinationList[0];
-        var copiedCombinationList = new List<T>(combinationList);
-
-        List<List<T>> subcombinations = GenerateCombinations(copiedCombinationList, selectionSize - 1);
-
-        foreach (var subcombination in subcombinations)
-        {
-            subcombination.Insert(0, head);
-            combinations.Add(subcombination);
-        }
-
-        combinationList.RemoveAt(0);
-        combinations.AddRange(GenerateCombinations(combinationList, selectionSize));
-
-        return combinations;
-    }
-
     public class Aunt
     {
         [JsonIgnore]
-        public int Number {get; set;} = 0;
+        public int Number { get; set; } = 0;
 
         [JsonProperty("children")]
         public int? Children { get; set; }
@@ -971,7 +915,7 @@ public static class AdventOfCode
         var happiness = 0;
 
         //nearest neighbor algorithm doesn't work for this one
-        foreach (var permutation in updatedVertices.Permute())
+        foreach (var permutation in new Permutations<TSPVertex>(updatedVertices))
         {
             var iterationHappiness = 0;
 
@@ -1002,7 +946,7 @@ public static class AdventOfCode
 
         happiness = 0;
 
-        foreach (var permutation in updatedVertices.Permute())
+        foreach (var permutation in new Permutations<TSPVertex>(updatedVertices))
         {
             var iterationHappiness = 0;
 
@@ -1121,7 +1065,7 @@ public static class AdventOfCode
             });
         }
 
-        var combinations = GenerateCombinations(ingredients, 100);
+        var combinations = new Combinations<Ingredient>(ingredients, 100, GenerateOption.WithRepetition);
         var bestScore = 0;
         var bestScoreWithCalories = 0;
 
@@ -1149,7 +1093,8 @@ public static class AdventOfCode
 
     public static void Day16(string[] data)
     {
-        var auntToFind = new Aunt{
+        var auntToFind = new Aunt
+        {
             Children = 3,
             Cats = 7,
             Samoyeds = 2,
@@ -1176,7 +1121,7 @@ public static class AdventOfCode
         }
 
         //https://stackoverflow.com/questions/31114892/using-linq-to-find-best-match-across-multiple-properties
-        var grouping = aunts.GroupBy(aunt => 
+        var grouping = aunts.GroupBy(aunt =>
             (aunt.Akitas == auntToFind.Akitas ? 1 : 0) +
             (aunt.Cars == auntToFind.Cars ? 1 : 0) +
             (aunt.Cats == auntToFind.Cats ? 1 : 0) +
@@ -1191,9 +1136,9 @@ public static class AdventOfCode
 
         var maxCount = grouping.Max(x => x.Key);
         var resultSet = grouping.FirstOrDefault(x => x.Key == maxCount)?.Select(g => g).Single();
-        Console.WriteLine($"Part 1: {resultSet?.Number}"); 
+        Console.WriteLine($"Part 1: {resultSet?.Number}");
 
-        grouping = aunts.GroupBy(aunt => 
+        grouping = aunts.GroupBy(aunt =>
             (aunt.Akitas == auntToFind.Akitas ? 1 : 0) +
             (aunt.Cars == auntToFind.Cars ? 1 : 0) +
             (aunt.Cats > auntToFind.Cats ? 1 : 0) +
@@ -1208,6 +1153,27 @@ public static class AdventOfCode
 
         maxCount = grouping.Max(x => x.Key);
         resultSet = grouping.FirstOrDefault(x => x.Key == maxCount)?.Select(g => g).Single();
-        Console.WriteLine($"Part 1: {resultSet?.Number}");        
+        Console.WriteLine($"Part 1: {resultSet?.Number}");
+    }
+
+    public static void Day17(string[] data)
+    {
+        var totalWays = 0;
+        var minTotalWays = new ConcurrentDictionary<int, int>();
+
+        for (var i = 1; i <= data.Count(); i++)
+        {
+            foreach (var combination in new Combinations<int>(data.ToList().ConvertAll(int.Parse), i, GenerateOption.WithoutRepetition))
+            {
+                if (combination.Sum() == 150)
+                {
+                    minTotalWays.AddOrUpdate(i, 1, (key, oldValue) => oldValue + 1);
+                    totalWays += 1;
+                }
+            }
+        }
+
+        Console.WriteLine($"Part 1: {totalWays}");
+        Console.WriteLine($"Part 2: {minTotalWays[minTotalWays.Min(kvp => kvp.Key)]}");
     }
 }
