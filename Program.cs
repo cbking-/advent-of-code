@@ -63,7 +63,7 @@ public static class AdventOfCode
 
     public static async Task Day1()
     {
-        var data = await LoadDataAsync("input1");
+        var data = await LoadDataAsync("inputs\\input1.txt");
 
         var answer = (data.Where(character => character == '(').Count()) - (data.Where(character => character == ')').Count());
 
@@ -87,7 +87,7 @@ public static class AdventOfCode
 
     public static async Task Day2()
     {
-        var data = await LoadDataAsync("input2");
+        var data = await LoadDataAsync("inputs\\input2.txt");
         var fixedData = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var answer = fixedData.Select(row => row.Split('x'))
@@ -125,7 +125,7 @@ public static class AdventOfCode
 
     public static async Task Day3()
     {
-        var data = await LoadDataAsync("input3");
+        var data = await LoadDataAsync("inputs\\input3.txt");
 
         var houses = new HashSet<int[]>(new IntArrayKeyComparer());
         var x = 0;
@@ -198,7 +198,7 @@ public static class AdventOfCode
 
     public static async Task Day4()
     {
-        var data = await LoadDataAsync("input4");
+        var data = await LoadDataAsync("inputs\\input4.txt");
 
         var answer = 0;
 
@@ -233,7 +233,7 @@ public static class AdventOfCode
 
     public static async Task Day5()
     {
-        var data = await LoadDataAsync("input5");
+        var data = await LoadDataAsync("inputs\\input5.txt");
 
         var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
@@ -260,7 +260,7 @@ public static class AdventOfCode
 
     public static async Task Day6()
     {
-        var data = await LoadDataAsync("input6");
+        var data = await LoadDataAsync("inputs\\input6.txt");
 
         var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
@@ -353,7 +353,7 @@ public static class AdventOfCode
         // but was fun to figure out 
         // 10/10
         #region Setup
-        var data = await LoadDataAsync("input7");
+        var data = await LoadDataAsync("inputs\\input7.txt");
 
         var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
@@ -503,5 +503,36 @@ public static class AdventOfCode
 
         Console.WriteLine($"Part 2: {map["a"]}");
         #endregion
+    }
+
+    public static async Task Day8()
+    {
+        var data = await LoadDataAsync("inputs\\input8.txt");
+        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        var characterSum = lines.Sum(line => line.Length);
+        
+        var memorySum = lines.Sum(line =>
+        {
+            line = line.Substring(1, line.Length - 2);      
+            line = Regex.Replace(line, @"\\\\", @"A");
+            line = Regex.Replace(line, @"\\""", @"A");
+            line = Regex.Replace(line, @"\\x[0-9a-fA-F]{2}", @"A");
+            return line.Length;
+        });
+
+        Console.WriteLine($"Part 1: {characterSum - memorySum}");
+
+        var encodedSum = lines.Sum(line =>
+        {
+            //some lines end with \\" which will mess up replacment later
+            line = line.Substring(1, line.Length - 2); 
+            line = Regex.Replace(line, @"\\", @"\\"); 
+            line = Regex.Replace(line, @"\\""", @"\\""");      
+            
+            return line.Length + 6; //4 being the encode quotes and 2 the surrounding quotes
+        });
+
+         Console.WriteLine($"Part 2: {encodedSum - characterSum}");
     }
 }
