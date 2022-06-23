@@ -155,37 +155,59 @@ public static class AdventOfCode
     public static List<List<T>> GenerateCombinations<T>(List<T> combinationList, int selectionSize)
     {
         var combinations = new List<List<T>>();
- 
+
         if (selectionSize == 0)
         {
             var emptyCombination = new List<T>();
             combinations.Add(emptyCombination);
- 
+
             return combinations;
         }
- 
+
         if (combinationList.Count == 0)
         {
             return combinations;
         }
- 
+
         T head = combinationList[0];
         var copiedCombinationList = new List<T>(combinationList);
- 
+
         List<List<T>> subcombinations = GenerateCombinations(copiedCombinationList, selectionSize - 1);
- 
+
         foreach (var subcombination in subcombinations)
         {
             subcombination.Insert(0, head);
             combinations.Add(subcombination);
         }
- 
+
         combinationList.RemoveAt(0);
         combinations.AddRange(GenerateCombinations(combinationList, selectionSize));
- 
+
         return combinations;
     }
 
+    public class Aunt
+    {
+        public int Children { get; set; } = 0;
+
+        public int Cats { get; set; } = 0;
+
+        public int Samoyeds {get; set;} = 0;
+
+        public int Pomeranians {get; set; } = 0;
+
+        public int Akitas {get; set;} = 0;
+
+        public int Vizslas {get; set; } = 0;
+
+        public int Goldfish {get; set; } = 0;
+
+        public int Trees {get; set;} = 0;
+
+        public int Cars {get; set;} = 0;
+
+        public int Perfumes {get; set; } = 0;
+    }
     #endregion
 
     public static void Day1(string[] data)
@@ -1068,7 +1090,7 @@ public static class AdventOfCode
     public static void Day15(string[] data)
     {
         var ingredients = new List<Ingredient>();
-        
+
         foreach (var line in data)
         {
             //Sugar: capacity 3, durability 0, flavor 0, texture -3, calories 2
@@ -1089,8 +1111,9 @@ public static class AdventOfCode
         var combinations = GenerateCombinations(ingredients, 100);
         var bestScore = 0;
         var bestScoreWithCalories = 0;
-        
-        foreach(var combo in combinations){
+
+        foreach (var combo in combinations)
+        {
             var groups = combo.GroupBy(ingredient => ingredient.Name);
             var capacity = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Capacity)), 0, int.MaxValue);
             var durability = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Durability)), 0, int.MaxValue);
@@ -1099,7 +1122,8 @@ public static class AdventOfCode
 
             var calories = groups.Sum(group => group.Sum(ingredient => ingredient.Calories));
 
-            if (calories == 500){
+            if (calories == 500)
+            {
                 bestScoreWithCalories = Math.Max(bestScoreWithCalories, capacity * durability * flavor * texture);
             }
 
@@ -1108,5 +1132,19 @@ public static class AdventOfCode
 
         Console.WriteLine($"Part 1: {bestScore}");
         Console.WriteLine($"Part 2: {bestScoreWithCalories}");
+    }
+
+    public static void Day16(string[] data)
+    {
+        // children: 3
+        // cats: 7
+        // samoyeds: 2
+        // pomeranians: 3
+        // akitas: 0
+        // vizslas: 0
+        // goldfish: 5
+        // trees: 3
+        // cars: 2
+        // perfumes: 1
     }
 }
