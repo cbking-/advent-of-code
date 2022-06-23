@@ -88,7 +88,7 @@ public static class AdventOfCode
     public static async Task Day2()
     {
         var data = await LoadDataAsync("input2");
-        var fixedData = data.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        var fixedData = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var answer = fixedData.Select(row => row.Split('x'))
                                   .Sum(dimension =>
@@ -235,7 +235,7 @@ public static class AdventOfCode
     {
         var data = await LoadDataAsync("input5");
 
-        var lines = data.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var niceStringRuleOne = "^(.*[aeiou].*){3,}$";
         var niceStringRuleTwo = "([a-z])\\1";
@@ -262,7 +262,7 @@ public static class AdventOfCode
     {
         var data = await LoadDataAsync("input6");
 
-        var lines = data.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var instructions = lines.Select(line =>
         {
@@ -355,7 +355,7 @@ public static class AdventOfCode
         #region Setup
         var data = await LoadDataAsync("input7");
 
-        var lines = data.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var instructions = lines.Select(line =>
         {
