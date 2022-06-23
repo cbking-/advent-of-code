@@ -1,10 +1,7 @@
 ﻿using System.Reflection;
-using System.Text.RegularExpressions;
+using static Core.Helpers;
 
-var helperType = typeof(Core.Helpers);
-var dataToLoad = helperType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
-dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs{Path.DirectorySeparatorChar}{args[0]}.txt" });
-var data = await loadTask;
+var data = await LoadDataAsync(args[0]);
 
 var adventType = typeof(AdventOfCode);
 var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
@@ -12,21 +9,9 @@ dayToRun.Invoke(null, new object[] { data });
 
 public static class AdventOfCode
 {
-    #region Helpers
-
-    public static async Task<string[]> LoadDataAsync(string fileName)
-    {
-        using var file = new StreamReader(fileName);
-        var data = await file.ReadToEndAsync();
-        return data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-    }
-
-    public static IEnumerable<(T Item, int Index)> WithIndex<T>(this IEnumerable<T> source)
-    {
-        return source.Select((Item, Index) => (Item, Index));
-    }
-
+    #region Objects
     #endregion
+    
     public static void Day1(string[] data)
     {
         var numbers = Array.ConvertAll(data, line => int.Parse(line));

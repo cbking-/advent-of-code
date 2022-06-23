@@ -9,10 +9,7 @@ using Combinatorics.Collections;
 using System.Diagnostics;
 using static Core.Helpers;
 
-var helperType = typeof(Core.Helpers);
-var dataToLoad = helperType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
-dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs{Path.DirectorySeparatorChar}{args[0]}.txt" });
-var data = await loadTask;
+var data = await LoadDataAsync(args[0]);
 
 var adventType = typeof(AdventOfCode);
 var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");

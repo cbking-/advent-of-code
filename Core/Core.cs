@@ -1,9 +1,9 @@
 ﻿namespace Core;
 public static class Helpers
 {
-    public static async Task<string[]> LoadDataAsync(string fileName)
+    public static async Task<string[]> LoadDataAsync(string day)
     {
-        using var file = new StreamReader(fileName);
+        using var file = new StreamReader($"inputs{Path.DirectorySeparatorChar}{day}.txt");
         var data = await file.ReadToEndAsync();
         return data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
     }
