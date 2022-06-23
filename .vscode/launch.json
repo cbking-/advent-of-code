@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/2021/bin/Debug/net6.0/AdventOfCode2021.dll",
-            "args": ["Day6"],
+            "args": ["Day7"],
             "cwd": "${workspaceFolder}/2021",
             "console": "internalConsole",
             "stopAtEntry": false
