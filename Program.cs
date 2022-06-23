@@ -141,6 +141,51 @@ public static class AdventOfCode
         }
     }
 
+    public class Ingredient
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Capacity { get; set; } = 0;
+        public int Durability { get; set; } = 0;
+        public int Flavor { get; set; } = 0;
+        public int Texture { get; set; } = 0;
+        public int Calories { get; set; } = 0;
+    }
+
+    //https://rosettacode.org/wiki/Combinations_with_repetitions#C.23
+    public static List<List<T>> GenerateCombinations<T>(List<T> combinationList, int selectionSize)
+    {
+        var combinations = new List<List<T>>();
+ 
+        if (selectionSize == 0)
+        {
+            var emptyCombination = new List<T>();
+            combinations.Add(emptyCombination);
+ 
+            return combinations;
+        }
+ 
+        if (combinationList.Count == 0)
+        {
+            return combinations;
+        }
+ 
+        T head = combinationList[0];
+        var copiedCombinationList = new List<T>(combinationList);
+ 
+        List<List<T>> subcombinations = GenerateCombinations(copiedCombinationList, selectionSize - 1);
+ 
+        foreach (var subcombination in subcombinations)
+        {
+            subcombination.Insert(0, head);
+            combinations.Add(subcombination);
+        }
+ 
+        combinationList.RemoveAt(0);
+        combinations.AddRange(GenerateCombinations(combinationList, selectionSize));
+ 
+        return combinations;
+    }
+
     #endregion
 
     public static void Day1(string[] data)
@@ -897,7 +942,7 @@ public static class AdventOfCode
 
             foreach (var vertex in permutation)
             {
-                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;                
+                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;
             }
 
             happiness = Math.Max(happiness, iterationHappiness);
@@ -905,14 +950,15 @@ public static class AdventOfCode
 
         Console.WriteLine($"Part 1: {happiness}");
 
-        updatedVertices.Add(new TSPVertex{
+        updatedVertices.Add(new TSPVertex
+        {
             City = "Corbin",
             Visited = false
         });
 
-        foreach(var vertex in updatedVertices)
+        foreach (var vertex in updatedVertices)
         {
-            if(vertex.City != "Corbin")
+            if (vertex.City != "Corbin")
             {
                 vertex.Neighbors.Add("Corbin", 0);
                 updatedVertices.Where(vert => vert.City == "Corbin").Single().Neighbors.Add(vertex.City, 0);
@@ -927,7 +973,7 @@ public static class AdventOfCode
 
             foreach (var vertex in permutation)
             {
-                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;                
+                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;
             }
 
             happiness = Math.Max(happiness, iterationHappiness);
@@ -936,7 +982,8 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {happiness}");
     }
 
-    public static void Day14(string[] data){
+    public static void Day14(string[] data)
+    {
         var winner = 0;
         var raceDuration = 2503;
 
@@ -951,15 +998,17 @@ public static class AdventOfCode
             var restDuration = int.Parse(match.Groups[4].Value);
 
             var distance = speed * speedDuration;
-            var totalDuration = speedDuration  + restDuration;
+            var totalDuration = speedDuration + restDuration;
 
-            var totalDistance = distance * (raceDuration/totalDuration);
+            var totalDistance = distance * (raceDuration / totalDuration);
             var speedTimeLeft = raceDuration % totalDuration;
 
-            if(speedTimeLeft >= speedDuration){
+            if (speedTimeLeft >= speedDuration)
+            {
                 totalDistance += distance;
             }
-            else{
+            else
+            {
                 totalDistance += speed * speedTimeLeft;
             }
 
@@ -982,29 +1031,31 @@ public static class AdventOfCode
             var restDuration = int.Parse(match.Groups[4].Value);
 
             var distance = speed * speedDuration;
-            var totalDuration = speedDuration  + restDuration;
+            var totalDuration = speedDuration + restDuration;
 
             race.Add(reindeer, Enumerable.Repeat(0, raceDuration).ToArray());
             points.Add(reindeer, 0);
             var accumulator = 0;
 
-            foreach(var seconds in Enumerable.Range(1, raceDuration))
+            foreach (var seconds in Enumerable.Range(1, raceDuration))
             {
-                var totalDistance = distance * (seconds/totalDuration);
+                var totalDistance = distance * (seconds / totalDuration);
                 var speedTimeLeft = seconds % totalDuration;
 
-                if(speedTimeLeft > speedDuration){
+                if (speedTimeLeft > speedDuration)
+                {
                     race[reindeer][seconds - 1] = accumulator;
                 }
-                else{
+                else
+                {
                     race[reindeer][seconds - 1] = (speed * speedTimeLeft) + totalDistance;
-                    accumulator = (speed * speedTimeLeft) + totalDistance; 
-                }             
-            }            
+                    accumulator = (speed * speedTimeLeft) + totalDistance;
+                }
+            }
         }
 
 
-        foreach(var second in Enumerable.Range(1, raceDuration))
+        foreach (var second in Enumerable.Range(1, raceDuration))
         {
             var momentWinner = race.Max(reindeer => reindeer.Value[second - 1]);
             var scorer = race.First(reindeer => reindeer.Value[second - 1] == momentWinner).Key;
@@ -1012,5 +1063,50 @@ public static class AdventOfCode
         }
 
         Console.WriteLine($"Part 2: {points.Max(kvp => kvp.Value)}");
+    }
+
+    public static void Day15(string[] data)
+    {
+        var ingredients = new List<Ingredient>();
+        
+        foreach (var line in data)
+        {
+            //Sugar: capacity 3, durability 0, flavor 0, texture -3, calories 2
+            var pattern = @"(\w+): capacity (-?\d+), durability (-?\d+), flavor (-?\d+), texture (-?\d+), calories (-?\d+)";
+            var match = Regex.Matches(line, pattern).First();
+
+            ingredients.Add(new Ingredient
+            {
+                Name = match.Groups[1].Value,
+                Capacity = int.Parse(match.Groups[2].Value),
+                Durability = int.Parse(match.Groups[3].Value),
+                Flavor = int.Parse(match.Groups[4].Value),
+                Texture = int.Parse(match.Groups[5].Value),
+                Calories = int.Parse(match.Groups[6].Value)
+            });
+        }
+
+        var combinations = GenerateCombinations(ingredients, 100);
+        var bestScore = 0;
+        var bestScoreWithCalories = 0;
+        
+        foreach(var combo in combinations){
+            var groups = combo.GroupBy(ingredient => ingredient.Name);
+            var capacity = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Capacity)), 0, int.MaxValue);
+            var durability = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Durability)), 0, int.MaxValue);
+            var flavor = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Flavor)), 0, int.MaxValue);
+            var texture = Math.Clamp(groups.Sum(group => group.Sum(ingredient => ingredient.Texture)), 0, int.MaxValue);
+
+            var calories = groups.Sum(group => group.Sum(ingredient => ingredient.Calories));
+
+            if (calories == 500){
+                bestScoreWithCalories = Math.Max(bestScoreWithCalories, capacity * durability * flavor * texture);
+            }
+
+            bestScore = Math.Max(bestScore, capacity * durability * flavor * texture);
+        }
+
+        Console.WriteLine($"Part 1: {bestScore}");
+        Console.WriteLine($"Part 2: {bestScoreWithCalories}");
     }
 }
