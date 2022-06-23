@@ -316,30 +316,20 @@ public static class AdventOfCode
         var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
 
-        var fishes = new Dictionary<int, long>(){
-            {0, 0},
-            {1, 0},
-            {2, 0},
-            {3, 0},
-            {4, 0},
-            {5, 0},
-            {6, 0},
-            {7, 0},
-            {8, 0}
-        };
-
-        var newFishes = new Dictionary<int, long>(fishes);
+        var fishes = new long[9];
 
         Array.ConvertAll(data[0].Split(','), int.Parse).ToList().ForEach(state => fishes[state] += 1);
 
         foreach (var day in Enumerable.Range(1, 80))
         {
-            var nextFishes = new Dictionary<int, long>(fishes);
-            var nextNewFishes = new Dictionary<int, long>(newFishes);
+            var nextFishes = new long[9];
+            var nextNewFishes = new long[9];
 
-            foreach (var group in fishes)
+            Array.Copy(fishes, nextFishes, fishes.Length);
+
+            foreach (var group in fishes.WithIndex())
             {
-                if (group.Key == 0)
+                if (group.Index == 0)
                 {
                     nextNewFishes[8] += fishes[0];
                     nextNewFishes[6] += fishes[0];
@@ -347,15 +337,15 @@ public static class AdventOfCode
                 }
                 else
                 {
-                    nextFishes[group.Key - 1] += fishes[group.Key];
-                    nextFishes[group.Key] = nextNewFishes[group.Key]; //this will put in the sixes and eights
+                    nextFishes[group.Index - 1] += fishes[group.Index];
+                    nextFishes[group.Index] = nextNewFishes[group.Index]; //this will put in the sixes and eights
                 }
             }
 
-            fishes = new Dictionary<int, long>(nextFishes);
+            Array.Copy(nextFishes, fishes, nextFishes.Length);
         }
 
-        Console.WriteLine($"Part 1: \x1b[93m{fishes.Select(kvp => kvp.Value).Sum()}\x1b[0m");
+        Console.WriteLine($"Part 1: \x1b[93m{fishes.Sum()}\x1b[0m");
 
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
@@ -365,12 +355,14 @@ public static class AdventOfCode
         //continue to the 256th day
         foreach (var day in Enumerable.Range(1, 176))
         {
-            var nextFishes = new Dictionary<int, long>(fishes);
-            var nextNewFishes = new Dictionary<int, long>(newFishes);
+            var nextFishes = new long[9];
+            var nextNewFishes = new long[9];
 
-            foreach (var group in fishes)
+            Array.Copy(fishes, nextFishes, fishes.Length);
+
+            foreach (var group in fishes.WithIndex())
             {
-                if (group.Key == 0)
+                if (group.Index == 0)
                 {
                     nextNewFishes[8] += fishes[0];
                     nextNewFishes[6] += fishes[0];
@@ -378,15 +370,15 @@ public static class AdventOfCode
                 }
                 else
                 {
-                    nextFishes[group.Key - 1] += fishes[group.Key];
-                    nextFishes[group.Key] = nextNewFishes[group.Key]; //this will put in the sixes and eights
+                    nextFishes[group.Index - 1] += fishes[group.Index];
+                    nextFishes[group.Index] = nextNewFishes[group.Index]; //this will put in the sixes and eights
                 }
             }
 
-            fishes = new Dictionary<int, long>(nextFishes);
+            Array.Copy(nextFishes, fishes, nextFishes.Length);
         }
 
-        Console.WriteLine($"Part 2: \x1b[93m{fishes.Select(kvp => kvp.Value).Sum()}\x1b[0m");
+        Console.WriteLine($"Part 2: \x1b[93m{fishes.Sum()}\x1b[0m");
         watch.Stop();
         Console.WriteLine($"Part 2 Execution Time: {watch.ElapsedMilliseconds} ms");
     }
@@ -396,6 +388,9 @@ public static class AdventOfCode
         var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
 
+        //double since we will be caclulating the median which could be a double value
+        // Though this is unlikely as AOC only deals with integers but that's how 
+        // the library implements it
         var positions = Array.ConvertAll(data[0].Split(',', StringSplitOptions.RemoveEmptyEntries), double.Parse);
 
         //added a whole package for getting the median but their implementation is going to be way better
