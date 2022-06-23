@@ -228,6 +228,37 @@ public static class AdventOfCode
                 throw new ArgumentException("Object is not an RPG item");
         }
     }
+
+    [DebuggerDisplay("{Name}")]
+    public class Spell : IComparable
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public int Cost { get; set; } = 0;
+
+        public Effect Effect { get; set; } = new Effect();
+
+        public int CompareTo(object? obj)
+        {
+            if (obj == null) return 1;
+
+            Spell? otherSpell = obj as Spell;
+            if (otherSpell != null)
+                return this.Name.CompareTo(otherSpell.Name);
+            else
+                throw new ArgumentException("Object is not a Spell");
+        }
+    }
+
+    public class Effect
+    {
+        public int Damage { get; set; } = 0;
+        public int Heal { get; set; } = 0;
+        public int Time { get; set; } = 0;
+        public int Armor { get; set; } = 0;
+        public int Mana { get; set; } = 0;
+    }
+
     #endregion
 
     public static void Day1(string[] data)
@@ -1510,7 +1541,7 @@ public static class AdventOfCode
         };
 
         //WithRepetition will allow for optional rings and armor
-        var purchaseOpportunities = new Combinations<RPGItem>(store, 4, GenerateOption.WithRepetition) 
+        var purchaseOpportunities = new Combinations<RPGItem>(store, 4, GenerateOption.WithRepetition)
                                                 .Where(items => items.Count(item => item.Type == "Ring") < 3
                                                              && items.Count(item => item.Type == "Armor") < 2
                                                              && items.Count(item => item.Type == "Weapon") == 1);
@@ -1544,5 +1575,96 @@ public static class AdventOfCode
             .First();
 
         Console.WriteLine($"Part 2: {inoptimalPurchase.Sum(item => item.Cost)}");
+    }
+
+    public static void Day22(string[] data)
+    {
+        var mana = 500;
+        var playerHp = 50;
+
+        var bossHp = int.Parse(Regex.Matches(data[0], @"\d+").First().Groups[0].Value);
+        var bossDmg = int.Parse(Regex.Matches(data[1], @"\d+").First().Groups[0].Value);
+
+        var spells = new List<Spell>{
+            new Spell{ Name = "Magic Missile", Cost = 53,  Effect = new Effect{             Damage = 4 } },
+            new Spell{ Name = "Drain",         Cost = 73,  Effect = new Effect{ Damage = 2, Heal = 2   } },
+            new Spell{ Name = "Shield",        Cost = 113, Effect = new Effect{ Time = 6,   Armor = 7  } },
+            new Spell{ Name = "Poison",        Cost = 173, Effect = new Effect{ Time = 6,   Damage = 3 } },
+            new Spell{ Name = "Recharge",      Cost = 229, Effect = new Effect{ Time = 5,   Mana = 101 } }
+        };
+
+        var shieldActive = false;
+        var shieldTime = 0;
+        var shieldTimer = spells.Where(spell => spell.Name == "Shield").Single().Effect.Time;
+
+        var poisonActive = false;
+        var poisonTime = 0;
+        var poisonTimer = spells.Where(spell => spell.Name == "Poison").Single().Effect.Time;
+
+        var rechargeActive = false;
+        var rechargeTime = 0;
+        var rechargeTimer = spells.Where(spell => spell.Name == "Recharge").Single().Effect.Time;
+
+        while (bossHp > 0)
+        {
+            #region Effects
+            if (shieldActive)
+            {
+                shieldTime += 1;
+
+                if (shieldTime == shieldTimer)
+                {
+                    shieldActive = false;
+                    shieldTime = 0;
+                }
+            }
+
+            if (rechargeActive)
+            {
+                rechargeTime += 1;
+                mana += spells.Where(spell => spell.Name == "Recharge").Single().Effect.Mana;
+
+                if (rechargeTime == rechargeTimer)
+                {
+                    rechargeActive = false;
+                    rechargeTime = 0;
+                }
+            }
+
+            if(mana <= spells.Where(spell => spell.Name == "Recharge").Single().Cost - spells.Max(spell => spell.Cost))
+            {
+                rechargeActive = true;
+            }
+
+            var playerArmor = shieldActive ? 7 : 0;
+            
+            if (poisonActive)
+            {
+                poisonTime += 1;
+                bossHp -= spells.Where(spell => spell.Name == "Poison").Single().Effect.Damage;
+
+                if (poisonTime == poisonTimer)
+                {
+                    poisonActive = false;
+                    poisonTime = 0;
+                }
+            }
+            #endregion
+            
+            #region Player
+
+            //killed the boss early
+            if (bossHp <= 0)
+            {
+                break;
+            }
+            #endregion
+
+            #region Boss            
+                
+            playerHp -= bossDmg - playerArmor;
+
+            #endregion
+        }
     }
 }
