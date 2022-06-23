@@ -80,25 +80,16 @@ public static class Helpers
         return source.Select((Item, Index) => (Item, Index));
     }
 
+    public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int maximumItems)
+    {
+        return source.WithIndex().GroupBy(item => item.Index / maximumItems).Select(group => group.Select(item => item.Item));
+    }
     //https://codereview.stackexchange.com/a/237442
     /// <summary>
     /// Finds all the divisors of any positive integer passed as argument.
     /// Returns an array of int with all the divisors of the argument.
     /// Returns null if the argument is zero or negative.
     /// </summary>
-
-    //https://stackoverflow.com/a/66848613/17400290
-    public static T[][] Repeat<T>(this T[] arr, int count)
-    {
-        var res = new T[count][];
-        for (int i = 0; i < count; i++)
-        {
-            //arr.CopyTo(res[i], 0);
-            res[i] = (T[])arr.Clone();
-        }
-        return res;
-    }
-
     public static int[] GetDivisors(int n)
     {
         if (n <= 0)
@@ -123,6 +114,18 @@ public static class Helpers
         divisors.Sort();
 
         return divisors.ToArray();
+    }
+
+    //https://stackoverflow.com/a/66848613/17400290
+    public static T[][] Repeat<T>(this T[] arr, int count)
+    {
+        var res = new T[count][];
+        for (int i = 0; i < count; i++)
+        {
+            //arr.CopyTo(res[i], 0);
+            res[i] = (T[])arr.Clone();
+        }
+        return res;
     }
 
     private static int MinimumDistance(int[] distance, bool[] shortestPathTreeSet, int verticesCount)

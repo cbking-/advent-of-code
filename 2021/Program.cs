@@ -61,6 +61,84 @@ public static class AdventOfCode
         public int Number { get; set; } = 0;
     }
 
+    public class PacketDecoder
+    {
+        private string Packet = string.Empty;
+        private int Version = 0;
+        private int TypeId = 0;
+        private int LengthTypeId = 0;
+        private string Message = string.Empty;
+        private string SubPackets = string.Empty;
+
+        public PacketDecoder(string _packet)
+        {
+            Packet = _packet;
+
+            Version = Convert.ToInt32(Packet.Substring(0, 3), 2);
+            TypeId = Convert.ToInt32(Packet.Substring(3, 3), 2);
+            LengthTypeId = Convert.ToInt32(Packet.Substring(4, 1), 2);
+
+            if (TypeId == 4)
+            {
+                Message = Packet.Substring(6);
+            }
+            else if (TypeId == 0)
+            {
+                Message = Packet.Substring(7, 15);
+            }
+            else if (TypeId == 1)
+            {
+                Message = Packet.Substring(7, 11);
+            }
+        }
+
+        public List<int> GetVersions()
+        {
+            var headerVersions = new List<int>();
+
+            headerVersions.Add(GetVersion());
+
+            if (TypeId != 4)
+            {
+                var nextPackets = new PacketDecoder(Message);
+                headerVersions.AddRange(nextPackets.GetVersions());
+            }
+
+            return headerVersions;
+        }
+
+        private int GetVersion()
+        {
+            return Version;
+        }
+
+        private string GetSubPackets()
+        {
+            return "";
+        }
+
+        private int ParseLiteralValue(string message)
+        {
+            var literalValue = "";
+
+            //batches in max of 5
+            // last batch should return less than 5 if padded
+            foreach (var number in message.Batch(5))
+            {
+                var binary = string.Join("", number);
+
+                literalValue += binary.Substring(1);
+
+                //last group
+                if (number.First() == '0')
+                {
+                    break;
+                }
+            }
+
+            return Convert.ToInt32(literalValue, 2);
+        }
+    }
     #endregion
 
     public static void Day1(string[] data)
@@ -1204,5 +1282,13 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: \x1b[93m{answer.Last()}\x1b[0m");
         watch.Stop();
         Console.WriteLine($"Part 2 Execution Time: {watch.ElapsedMilliseconds} ms");
+    }
+
+    public static void Day16(string[] data)
+    {
+        var packet = "110100101111111000101000";
+
+
+
     }
 }
