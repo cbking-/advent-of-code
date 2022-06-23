@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using Newtonsoft.Json;
 using static Core.Helpers;
 
 var data = await LoadDataAsync(args[0]);
@@ -231,7 +232,7 @@ public static class AdventOfCode
         {
             var start = set.Split(" -> ")[0];
             var end = set.Split(" -> ")[1];
-        
+
             var xStart = int.Parse(start.Split(',')[0]);
             var yStart = int.Parse(start.Split(',')[1]);
             var xEnd = int.Parse(end.Split(',')[0]);
@@ -293,12 +294,98 @@ public static class AdventOfCode
         Console.WriteLine($"Part 1: \x1b[93m{partOne}\x1b[0m");
 
         var partTwo = straightVents.Concat(diagVents).GroupBy(vent => vent).Where(vent => vent.Count() > 1).Count();
-        
+
         Console.WriteLine($"Part 2: \x1b[93m{partTwo}\x1b[0m");
     }
 
     public static void Day6(string[] data)
     {
+        //First solution was to create a list of integers
+        // where each integer was a fish's countdown. Then
+        // Add to the list once it reached zero and add one to 8 and
+        // reset the current fish to 6.
+        // This worked for the part one but exponential growth kills part two.
+        // This solution keeps track of the number of fish in each day and the new fishes
+        // that are generated. The growth is tracked through longs rather than
+        // the size of a List. I keep track of new fish in a separate dictionary
+        // so they aren't overwritten as the other fish that haven't spawned 
+        // are figured out. I'm going to start using a time in the interest
+        // of seeing how quick my solutions are and if certain implementations
+        // are quicker than others.
 
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
+        var fishes = new Dictionary<int, long>(){
+            {0, 0},
+            {1, 0},
+            {2, 0},
+            {3, 0},
+            {4, 0},
+            {5, 0},
+            {6, 0},
+            {7, 0},
+            {8, 0}
+        };
+
+        var newFishes = new Dictionary<int, long>(fishes);
+
+        Array.ConvertAll(data[0].Split(','), int.Parse).ToList().ForEach(state => fishes[state] += 1);
+
+        foreach (var day in Enumerable.Range(1, 80))
+        {
+            var nextFishes = new Dictionary<int, long>(fishes);
+            var nextNewFishes = new Dictionary<int, long>(newFishes);
+
+            foreach(var group in fishes)
+            {
+                if(group.Key == 0)
+                {
+                    nextNewFishes[8] += fishes[0];
+                    nextNewFishes[6] += fishes[0];
+                    nextFishes[0] = 0;                    
+                }
+                else{
+                    nextFishes[group.Key - 1] += fishes[group.Key];
+                    nextFishes[group.Key] = nextNewFishes[group.Key]; //this will put in the sixes and eights
+                }
+            }
+
+            fishes =  new Dictionary<int, long>(nextFishes);
+        }
+
+        Console.WriteLine($"Part 1: \x1b[93m{fishes.Select(kvp => kvp.Value).Sum()}\x1b[0m");
+        
+        watch.Stop();
+        Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
+
+        watch.Start();
+
+        //continue to the 256th day
+        foreach (var day in Enumerable.Range(1, 176))
+        {
+            var nextFishes = new Dictionary<int, long>(fishes);
+            var nextNewFishes = new Dictionary<int, long>(newFishes);
+
+            foreach(var group in fishes)
+            {
+                if(group.Key == 0)
+                {
+                    nextNewFishes[8] += fishes[0];
+                    nextNewFishes[6] += fishes[0];
+                    nextFishes[0] = 0;                    
+                }
+                else{
+                    nextFishes[group.Key - 1] += fishes[group.Key];
+                    nextFishes[group.Key] = nextNewFishes[group.Key]; //this will put in the sixes and eights
+                }
+            }
+
+            fishes =  new Dictionary<int, long>(nextFishes);
+        }
+
+        Console.WriteLine($"Part 2: \x1b[93m{fishes.Select(kvp => kvp.Value).Sum()}\x1b[0m");
+        watch.Stop();
+        Console.WriteLine($"Part 2 Execution Time: {watch.ElapsedMilliseconds} ms");
     }
 }
