@@ -43,41 +43,32 @@ public static class AdventOfCode
         //Initial solutions were using regex to parse and foreach loops Linq is
         // a little more elegant and Regex was a bit overkill
 
-        var groups = data.GroupBy(line => line.Split(' ')[0], 
-                                  line => int.Parse(line.Split(' ')[1]),
-                                  (key, values) => new { Direction = key, Sum = values.Sum()});
-        
-        var part1 = groups.Single(group => group.Direction == "forward").Sum * 
-                    (groups.Single(group => group.Direction == "down").Sum - 
-                     groups.Single(group => group.Direction == "up").Sum );
-
-        Console.WriteLine($"Part 1: {part1}");
-
         //I don't think group by can be used here since
         // forward uses the current cumulative value of aim per iteration 
-        var part2 = data.Aggregate(new int[] {0,0,0},
+        var calculation = data.Aggregate((0, 0 ,0),
             (accumulator, line) => {
             var split = line.Split(' ');
 
             if (split[0] == "down")
             {
-                accumulator[0] += int.Parse(split[1]);
+                accumulator.Item1 += int.Parse(split[1]);
             }
 
             if (split[0] == "up")
             {
-                accumulator[0] -= int.Parse(split[1]);
+                accumulator.Item1 -= int.Parse(split[1]);
             }
 
             if (split[0] == "forward")
             {
-                accumulator[1] += int.Parse(split[1]);
-                accumulator[2] += accumulator[0] * int.Parse(split[1]);
+                accumulator.Item2 += int.Parse(split[1]);
+                accumulator.Item3 += accumulator.Item1 * int.Parse(split[1]);
             }
 
             return accumulator;
         });
 
-        Console.WriteLine($"Part 2: {part2[1] * part2[2]}");
+        Console.WriteLine($"Part 1: {calculation.Item2 * calculation.Item1}");
+        Console.WriteLine($"Part 2: {calculation.Item2 * calculation.Item3}");
     }
 }
