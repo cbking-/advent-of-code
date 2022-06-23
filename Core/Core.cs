@@ -86,6 +86,19 @@ public static class Helpers
     /// Returns an array of int with all the divisors of the argument.
     /// Returns null if the argument is zero or negative.
     /// </summary>
+
+    //https://stackoverflow.com/a/66848613/17400290
+    public static T[][] Repeat<T>(this T[] arr, int count)
+    {
+        var res = new T[count][];
+        for (int i = 0; i < count; i++)
+        {
+            //arr.CopyTo(res[i], 0);
+            res[i] = (T[])arr.Clone();
+        }
+        return res;
+    }
+
     public static int[] GetDivisors(int n)
     {
         if (n <= 0)
@@ -110,6 +123,64 @@ public static class Helpers
         divisors.Sort();
 
         return divisors.ToArray();
+    }
+
+    private static int MinimumDistance(int[] distance, bool[] shortestPathTreeSet, int verticesCount)
+    {
+        int min = int.MaxValue;
+        int minIndex = 0;
+
+        for (int v = 0; v < verticesCount; ++v)
+        {
+            if (shortestPathTreeSet[v] == false && distance[v] <= min)
+            {
+                min = distance[v];
+                minIndex = v;
+            }
+        }
+
+        return minIndex;
+    }
+
+    public static int[] DijkstraAlgo(Dictionary<int, int>[][] graph)
+    {
+        var vertices = graph.Length;
+        var neighbors = graph[0].Length;
+
+        int[] distance = new int[vertices];
+        bool[] shortestPathTreeSet = new bool[vertices];
+
+        for (int i = 0; i < vertices; ++i)
+        {
+            distance[i] = int.MaxValue;
+            shortestPathTreeSet[i] = false;
+        }
+
+        distance[0] = 0;
+
+        for (int count = 0; count < vertices - 1; ++count)
+        {
+            int u = MinimumDistance(distance, shortestPathTreeSet, vertices);
+            shortestPathTreeSet[u] = true;
+
+            for (int neighbor = 0; neighbor < neighbors; ++neighbor)
+            {
+                var vertex = graph[u][neighbor].Keys.SingleOrDefault() == 0 ? -1 : graph[u][neighbor].Keys.Single();
+
+                if (vertex == -1)
+                    continue;
+
+                if (!shortestPathTreeSet[vertex]
+                    && Convert.ToBoolean(graph[u][neighbor].Values.SingleOrDefault())
+                    && distance[u] != int.MaxValue
+                    && distance[u] + graph[u][neighbor].Values.Single() < distance[vertex])
+                {
+                    distance[vertex] = distance[u] + graph[u][neighbor].Values.Single();
+                }
+            }
+        }
+
+        return distance;
     }
 }
 
@@ -136,6 +207,7 @@ public class Graph
         }
     }
 }
+
 public class GraphNode : IEquatable<GraphNode>
 {
     public string Identifier { get; set; }
