@@ -350,6 +350,7 @@ public static class AdventOfCode
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
 
+        watch.Reset();
         watch.Start();
 
         //continue to the 256th day
@@ -401,6 +402,7 @@ public static class AdventOfCode
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
 
+        watch.Reset();
         watch.Start();
         var bestMovement = int.MaxValue;
 
@@ -518,6 +520,7 @@ public static class AdventOfCode
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
 
+        watch.Reset();
         watch.Start();
         var partTwo = decoded.Aggregate(0, (acc, output) => acc + int.Parse(output));
 
@@ -560,6 +563,7 @@ public static class AdventOfCode
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
 
+        watch.Reset();
         watch.Start();
 
         var partTwo = lowPoints.Select(point =>
@@ -669,6 +673,7 @@ public static class AdventOfCode
         watch.Stop();
         Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
 
+        watch.Reset();
         watch.Start();
         Console.WriteLine($"Part 2: \x1b[93m{partTwoScores.OrderBy(score => score).Take((partTwoScores.Count() / 2) + 1).Last()}\x1b[0m");
         watch.Stop();
