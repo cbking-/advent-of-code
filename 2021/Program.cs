@@ -67,17 +67,17 @@ public static class AdventOfCode
         var numbers = Array.ConvertAll(data, line => int.Parse(line));
 
         //skip the first one since there's nothing to compare it to
-        // Calling Skip(x) will be zero indexed (creates a new list) but pass that index to the 
+        // Calling Skip(x) will be zero indexed (creates a new list) but pass that index to the
         // data list to get the previous value from the current one from the Skip list.
         // Generates list of true or false then count the true values.
         Console.WriteLine($"Part 1: {numbers.Skip(1).Select((value, index) => value > numbers[index]).Count(value => value)}");
 
         //skip the first three since there's nothing to compare them to
         // since two windows share two of the same numbers, we don't need to calculate any sums
-        // only compare the first number of the first window and the last number of the second window       
+        // only compare the first number of the first window and the last number of the second window
         Console.WriteLine($"Part 2: {numbers.Skip(3).Select((value, index) => value > numbers[index]).Count(value => value)}");
 
-        //Another option (and maybe makes more sense) is to use Zip as we don't rely on knowing Skip is indexed zero        
+        //Another option (and maybe makes more sense) is to use Zip as we don't rely on knowing Skip is indexed zero
         // Console.WriteLine($"Part 1: {numbers.Zip(numbers.Skip(1), (first, second) => first < second).Count(value => value)}");
         // Console.WriteLine($"Part 2: {numbers.Zip(numbers.Skip(3), (first, second) => first < second).Count(value => value)}");
 
@@ -94,7 +94,7 @@ public static class AdventOfCode
         // a little more elegant and Regex was a bit overkill
 
         //I don't think group by can be used here since
-        // forward uses the current cumulative value of aim per iteration 
+        // forward uses the current cumulative value of aim per iteration
         var calculation = data.Aggregate((0, 0, 0),
             (accumulator, line) =>
             {
@@ -216,13 +216,13 @@ public static class AdventOfCode
 
     public static void Day5(string[] data)
     {
-        //There are some tuple swaps you can do 
+        //There are some tuple swaps you can do
         // when comparing coordinates so the for loops are more condensed
         // E.g. for diagonals
         //   if(xStart > xEnd)
         //      ((xStart, yStart), (xEnd, yEnd)) = ((xEnd, yEnd), (xStart, yStart))
-        // 
-        // Could also use a HashSet instead of a List and 
+        //
+        // Could also use a HashSet instead of a List and
         // increment some count when HashSet.Add returns false
 
         var straightVents = new List<(int, int)>();
@@ -308,7 +308,7 @@ public static class AdventOfCode
         // This solution keeps track of the number of fish in each day and the new fishes
         // that are generated. The growth is tracked through longs rather than
         // the size of a List. I keep track of new fish in a separate array
-        // so they aren't overwritten as the other fish that haven't spawned 
+        // so they aren't overwritten as the other fish that haven't spawned
         // are figured out. I'm going to start using a time in the interest
         // of seeing how quick my solutions are and if certain implementations
         // are quicker than others.
@@ -389,7 +389,7 @@ public static class AdventOfCode
         watch.Start();
 
         //double since we will be caclulating the median which could be a double value
-        // Though this is unlikely as AOC only deals with integers but that's how 
+        // Though this is unlikely as AOC only deals with integers but that's how
         // the library implements it
         var positions = Array.ConvertAll(data[0].Split(',', StringSplitOptions.RemoveEmptyEntries), double.Parse);
 
@@ -428,9 +428,9 @@ public static class AdventOfCode
         //     var output = line.Split('|', StringSplitOptions.RemoveEmptyEntries)[1]
         //                      .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        //     return output.Where(number => number.Length == 2 || 
-        //                         number.Length == 3 || 
-        //                         number.Length == 4 || 
+        //     return output.Where(number => number.Length == 2 ||
+        //                         number.Length == 3 ||
+        //                         number.Length == 4 ||
         //                         number.Length == 7)
         //                  .Count() + acc;
         // });
@@ -485,10 +485,10 @@ public static class AdventOfCode
             map[four.Except(one).Where(character => !map.ContainsKey(character)).Single()] = 'b';
 
             //now that we know the segment mapping for a, b, and d
-            // we can figure out which input is 5 as it's the only five segment 
+            // we can figure out which input is 5 as it's the only five segment
             // display that has a, b, and d
             var five = input.Where(ssd => map.Keys.All(ssd.Contains) && ssd.Length == 5).Single();
-            
+
             //5 shares one segment in common with 1 so we can map that one
             map[five.Intersect(one).Single()] = 'f';
 
@@ -500,15 +500,17 @@ public static class AdventOfCode
 
             //map the last segment
             map[eight.Where(character => !map.ContainsKey(character)).Single()] = 'e';
-            
+
             //Add the decoded output using the map we build
-            decoded.Add(output.Aggregate("", (acc, ssd) => {
+            decoded.Add(output.Aggregate("", (acc, ssd) =>
+            {
                 var key = string.Join("", ssd.Select(character => map[character]).OrderBy(character => character));
                 return acc + sevenSegmentNumbers[key].ToString();
             }));
         }
 
-        var partOne = decoded.Aggregate(0, (acc, output) => acc + output.Aggregate(0, (acc, character) => {
+        var partOne = decoded.Aggregate(0, (acc, output) => acc + output.Aggregate(0, (acc, character) =>
+        {
             return acc + (character == '1' || character == '4' || character == '7' || character == '8' ? 1 : 0);
         }));
 
@@ -518,9 +520,84 @@ public static class AdventOfCode
 
         watch.Start();
         var partTwo = decoded.Aggregate(0, (acc, output) => acc + int.Parse(output));
-       
-        Console.WriteLine($"Part 1: \x1b[93m{partTwo}\x1b[0m");
 
+        Console.WriteLine($"Part 2: \x1b[93m{partTwo}\x1b[0m");
+
+        watch.Stop();
+        Console.WriteLine($"Part 2 Execution Time: {watch.ElapsedMilliseconds} ms");
+    }
+
+    public static void Day9(string[] data)
+    {
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
+        //looks weird but join all lines from the data then split into individual characters.
+        // I like interacting with 2d arrays as a 1d array and using the x + y * width formula
+        var width = data[0].Length;
+        var map = string.Join("", data);
+
+        var lowPoints = map.WithIndex().Select(point =>
+        {
+            var neighbors = new char[]{
+                map.ElementAtOrDefault(point.Index % width == 0 ? -1 : point.Index - 1),     //left neighbor
+                map.ElementAtOrDefault((point.Index + 1) % width == 0 ? -1 : point.Index + 1),     //right neighbor
+                map.ElementAtOrDefault(point.Index - width), //top neighbor
+                map.ElementAtOrDefault(point.Index + width)  //bottom neighbor
+            };
+
+            if (point.Item < neighbors.Where(character => character != 0).Min())
+            {
+                return point.Index;
+            }
+
+            return -1;
+        }).Where(point => point != -1);
+
+        var partOne = lowPoints.Aggregate(0, (acc, point) => int.Parse(map.ElementAtOrDefault(point).ToString()) + 1 + acc);
+
+        Console.WriteLine($"Part 1: \x1b[93m{partOne}\x1b[0m");
+        watch.Stop();
+        Console.WriteLine($"Part 1 Execution Time: {watch.ElapsedMilliseconds} ms");
+
+        watch.Start();
+
+        var partTwo = lowPoints.Select(point =>
+        {
+            var basin = new List<int>{
+                point,
+                point % width == 0 ? -1 : point - 1,
+                (point + 1) % width == 0 ? -1 : point + 1,
+                point - width,
+                point + width
+            };
+
+            basin = basin.Where(location => map.ElementAtOrDefault(location) != '9' && map.ElementAtOrDefault(location) != 0).ToList();
+
+            IEnumerable<int> searchIndexes;
+
+            do
+            {
+                searchIndexes = basin.AsEnumerable();
+
+                var addToBasin = searchIndexes.SelectMany(index => new List<int>{
+                                                                            index % width == 0 ? -1 : index - 1,
+                                                                            (index + 1) % width == 0 ? -1 : index + 1,
+                                                                            index - width,
+                                                                            index + width
+                                                                        })
+                                              .Where(location => map.ElementAtOrDefault(location) != '9' && map.ElementAtOrDefault(location) != 0);
+
+                basin = basin.Union(addToBasin).ToList();
+
+                searchIndexes = basin.Except(searchIndexes);
+
+            } while (searchIndexes.Count() > 0);
+
+            return basin.Count();
+        }).OrderByDescending(basin => basin).Take(3).Aggregate(1, (acc, basin) => basin * acc);
+
+        Console.WriteLine($"Part 2: \x1b[93m{partTwo}\x1b[0m");
         watch.Stop();
         Console.WriteLine($"Part 2 Execution Time: {watch.ElapsedMilliseconds} ms");
     }
