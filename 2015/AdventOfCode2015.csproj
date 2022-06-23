@@ -9,7 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Combinatorics" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />    
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AdventOfCode.Core\AdventOfCode.Core.csproj" />
   </ItemGroup>
 
 </Project>
