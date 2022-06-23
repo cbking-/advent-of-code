@@ -28,36 +28,16 @@ public static class AdventOfCode
     #endregion
     public static void Day1(string[] data)
     {
-        var prevNum = int.Parse(data[0]);
+        //skip the first one since there's nothing to compare it to
+        // Calling Skip(x) will be zero indexed (creates a new list) but pass that index to the 
+        // data list to get the previous value from the current one from the Skip list.
+        // Generates list of true or false then count the true values.
+        Console.WriteLine($"Part 1: {data.Skip(1).Select((value, index) => int.Parse(value) > int.Parse(data[index])).Count(value => value)}");
 
-        var part1 = 0;
-
-        foreach(var line in data.Skip(1))
-        {
-            if (prevNum < int.Parse(line))
-            {
-                part1++;
-            }
-
-            prevNum = int.Parse(line);
-        }
-
-        Console.WriteLine($"Part 1: {part1}");
-
-        var prevSum = data.Take(3).Select(line => int.Parse(line)).Sum();
-        var part2 = 0;
-        foreach(var line in data.WithIndex().Skip(1))
-        {
-            var sum = data.Skip(line.Index).Take(3).Select(line => int.Parse(line)).Sum();
-
-            if(prevSum < sum){
-                part2++;
-            }
-
-            prevSum = sum;
-        }
-
-        Console.WriteLine($"Part 2: {part2}");
+        //skip the first three since there's nothing to compare them to
+        // since two windows share two of the same numbers, we don't need to calculate any sums
+        // only compare the first number of the first window and the last number of the second window       
+        Console.WriteLine($"Part 2: {data.Skip(3).Select((value, index) => int.Parse(value) > int.Parse(data[index])).Count(value => value)}");
     }
 
 }
