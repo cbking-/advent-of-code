@@ -59,6 +59,15 @@ public static class AdventOfCode
         public string Operation { get; set; } = string.Empty;
         public string DestinationWire { get; set; } = string.Empty;
     }
+
+    public class TSPVertex
+    {
+        public string City { get; set; } = string.Empty;
+
+        public bool Visited { get; set; } = false;
+
+        public Dictionary<string, int> Neighbors { get; set; } = new Dictionary<string, int>();
+    }
     #endregion
 
     public static async Task Day1()
@@ -511,10 +520,10 @@ public static class AdventOfCode
         var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         var characterSum = lines.Sum(line => line.Length);
-        
+
         var memorySum = lines.Sum(line =>
         {
-            line = line.Substring(1, line.Length - 2);      
+            line = line.Substring(1, line.Length - 2);
             line = Regex.Replace(line, @"\\\\", @"A");
             line = Regex.Replace(line, @"\\""", @"A");
             line = Regex.Replace(line, @"\\x[0-9a-fA-F]{2}", @"A");
@@ -526,13 +535,150 @@ public static class AdventOfCode
         var encodedSum = lines.Sum(line =>
         {
             //some lines end with \\" which will mess up replacment later
-            line = line.Substring(1, line.Length - 2); 
-            line = Regex.Replace(line, @"\\", @"\\"); 
-            line = Regex.Replace(line, @"\\""", @"\\""");      
-            
+            line = line.Substring(1, line.Length - 2);
+            line = Regex.Replace(line, @"\\", @"\\");
+            line = Regex.Replace(line, @"\\""", @"\\""");
+
             return line.Length + 6; //4 being the encode quotes and 2 the surrounding quotes
         });
 
-         Console.WriteLine($"Part 2: {encodedSum - characterSum}");
+        Console.WriteLine($"Part 2: {encodedSum - characterSum}");
+    }
+
+    public static async Task Day9()
+    {
+        var data = await LoadDataAsync("inputs\\input9.txt");
+        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        var vertices = new List<TSPVertex>();
+
+        foreach (var line in lines)
+        {
+            var pattern = @"(\w+) to (\w+) = (\d+)";
+            var matches = Regex.Matches(line, pattern);
+
+            var Distance = int.Parse(matches.First().Groups[3].Value);
+            var City = matches.First().Groups[1].Value;
+            var Neighbor = matches.First().Groups[2].Value;
+
+            var vertex = vertices.Where(route => route.City == City).SingleOrDefault() ?? new TSPVertex { City = City, Visited = false };
+            var neightborVertex = vertices.Where(route => route.City == Neighbor).SingleOrDefault() ?? new TSPVertex { City = Neighbor, Visited = false };
+
+            if (!vertices.Any(route => route.City == vertex.City))
+            {
+                vertex.Neighbors.Add(Neighbor, Distance);
+                vertices.Add(vertex);
+            }
+            else
+            {
+                vertices.Where(route => route.City == City).Select(route => { route.Neighbors.Add(Neighbor, Distance); return route; }).ToList();
+            }
+
+            //Also add neighbor vertex
+            if (!vertices.Any(route => route.City == neightborVertex.City))
+            {
+                neightborVertex.Neighbors.Add(City, Distance);
+                vertices.Add(neightborVertex);
+            }
+            else
+            {
+                vertices.Where(route => route.City == Neighbor).Select(route => { route.Neighbors.Add(City, Distance); return route; }).ToList();
+            }
+
+        }
+
+        //Traveling Sales Person Problem
+        //nearest neightbor algorithm
+
+        // 1. Initialize all vertices as unvisited.
+        // 2. Select an arbitrary vertex, set it as the current vertex u. Mark u as visited.
+        // 3. Find out the shortest edge connecting the current vertex u and an unvisited vertex v.
+        // 4. Set v as the current vertex u. Mark v as visited.
+        // 5. If all the vertices in the domain are visited, then terminate. Else, go to step 3.
+
+        var distance = int.MaxValue;
+
+        //using each vertex as a staring point
+        foreach (var vertex in vertices)
+        {
+            var currentVertex = vertex;
+            var iterationDistance = 0;
+
+            //loop until ever vertext has been visisted      
+            while (vertices.Any(vertex => vertex.Visited == false))
+            {
+                //null check so c# stops complaining
+                if (currentVertex is null)
+                {
+                    break;
+                }
+
+                currentVertex.Visited = true;
+                var nearestNeighbor = currentVertex.Neighbors.Where(neighbor => vertices.Any(vertex => vertex.City == neighbor.Key && !vertex.Visited))
+                                                             .OrderBy(kvp => kvp.Value).FirstOrDefault();
+                iterationDistance += nearestNeighbor.Value;
+                currentVertex = vertices.Where(vertex => vertex.City == nearestNeighbor.Key && !vertex.Visited).SingleOrDefault();
+            }
+
+            distance = Math.Min(distance, iterationDistance);
+
+            //reset visitation
+            vertices.Select(vertex => { vertex.Visited = false; return vertex; }).ToList();
+        }
+
+        Console.WriteLine($"Part 1: {distance}");
+
+        distance = 0;
+
+        foreach (var vertex in vertices)
+        {
+            var currentVertex = vertex;
+            var iterationDistance = 0;
+     
+            while (vertices.Any(vertex => vertex.Visited == false))
+            {
+                if (currentVertex is null)
+                {
+                    break;
+                }
+
+                currentVertex.Visited = true;
+                var nearestNeighbor = currentVertex.Neighbors.Where(neighbor => vertices.Any(vertex => vertex.City == neighbor.Key && !vertex.Visited))
+                                                             .OrderByDescending(kvp => kvp.Value).FirstOrDefault();
+                iterationDistance += nearestNeighbor.Value;
+                currentVertex = vertices.Where(vertex => vertex.City == nearestNeighbor.Key && !vertex.Visited).SingleOrDefault();
+            }
+
+            distance = Math.Max(distance, iterationDistance);
+
+            vertices.Select(vertex => { vertex.Visited = false; return vertex; }).ToList();
+        }
+
+        Console.WriteLine($"Part 2: {distance}");
+    }
+
+    public static async Task Day10(){
+        var data = await LoadDataAsync("inputs\\input10.txt");        
+        var iteration = data; 
+
+        var pattern = @"((\d)\2{0,})+";
+        
+        for(var step = 1; step <= 40; step++){
+            var captures = Regex.Match(iteration, pattern).Groups[1].Captures;
+            
+            iteration = string.Concat(captures.Select(capture => capture.Length.ToString() + capture.Value.Last()));
+        }  
+        
+        Console.WriteLine($"Part 1: {iteration.Length}"); 
+        
+        iteration = data; 
+
+        for(var step = 1; step <= 50; step++){
+            var captures = Regex.Match(iteration, pattern).Groups[1].Captures;
+            
+            iteration = string.Concat(captures.Select(capture => capture.Length.ToString() + capture.Value.Last()));
+        }  
+        
+        Console.WriteLine($"Part 1: {iteration.Length}"); 
     }
 }
