@@ -1,6 +1,17 @@
-﻿await Day1();
+﻿using System.Reflection;
 
-static async Task Day1()
+var adventType = typeof(AdventOfCode);
+
+var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
+
+dynamic? task = dayToRun.Invoke(null, null);
+await task;
+
+public static class AdventOfCode
 {
-    //Code goes here
+    public static async Task Day1()
+    {
+        Console.WriteLine("Hello");
+    }
+
 }
