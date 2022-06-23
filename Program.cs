@@ -58,6 +58,7 @@ public static class AdventOfCode
             return result;
         }
     }
+
     public class Instruction
     {
         public string LeftOperand { get; set; } = string.Empty;
@@ -74,6 +75,72 @@ public static class AdventOfCode
 
         public Dictionary<string, int> Neighbors { get; set; } = new Dictionary<string, int>();
     }
+
+    //https://stackoverflow.com/a/15150493/17400290
+    public static IEnumerable<IEnumerable<T>> Permute<T>(this IEnumerable<T> input)
+    {
+        if (input == null)
+        {
+            yield break;
+        }
+
+        var list = input.ToList();
+
+        if (!list.Any())
+        {
+            yield return Enumerable.Empty<T>();
+        }
+        else
+        {
+            var startingElementIndex = 0;
+
+            foreach (var startingElement in list)
+            {
+                var index = startingElementIndex;
+                var remainingItems = list.Where((e, i) => i != index);
+
+                foreach (var permutationOfRemainder in remainingItems.Permute())
+                {
+                    yield return permutationOfRemainder.Prepend(startingElement);
+                }
+
+                startingElementIndex++;
+            }
+        }
+    }
+
+    //based on http://www.herlitz.nu/2011/12/01/getting-the-previous-and-next-record-from-list-using-linq/
+    ///<summary>
+    /// Gets the next value or, if at the end of the list, gets the first value.
+    ///</summary>
+    public static T? GetNext<T>(IEnumerable<T> list, T current)
+    {
+        try
+        {
+            return list.SkipWhile(x => x != null && !x.Equals(current)).Skip(1).FirstOrDefault() ?? list.First();
+        }
+        catch
+        {
+            return default(T);
+        }
+    }
+
+    //based on http://www.herlitz.nu/2011/12/01/getting-the-previous-and-next-record-from-list-using-linq/
+    ///<summary>
+    /// Gets the previous value or, if at the beginning of the list, gets the last value.
+    ///</summary>
+    public static T? GetPrevious<T>(IEnumerable<T> list, T current)
+    {
+        try
+        {
+            return list.TakeWhile(x => x != null && !x.Equals(current)).LastOrDefault() ?? list.Last();
+        }
+        catch
+        {
+            return default(T);
+        }
+    }
+
     #endregion
 
     public static void Day1(string[] data)
@@ -762,5 +829,110 @@ public static class AdventOfCode
 
         sum = Regex.Matches(serialized, @"-?\d+").Sum(match => int.Parse(match.Value));
         Console.WriteLine($"Part 2: {sum}");
+    }
+
+    public static void Day13(string[] data)
+    {
+        //At first, I thought this would be pretty similar to how I
+        // solved Day 9. However, I found that the nearest neighbor algorithm
+        // doesn't work for this problem as well as it did for the other.
+        // I think it has to do with how each vertex has two neighbors (rather than a boolean 'visited')
+        // and creates a circuit rather than a straight path.
+        // I'm not smart enough to figure out how to get nearest neighbor to work here.
+
+        //will maintain original values
+        var vertices = new List<TSPVertex>();
+
+        foreach (var line in data)
+        {
+            var pattern = @"(\w+) would (\w+) (\d+) happiness units by sitting next to (\w+)";
+            var matches = Regex.Matches(line, pattern);
+
+            var match = matches.First();
+
+            var sign = match.Groups[2].Value == "gain" ? "+" : "-";
+
+            var Distance = int.Parse(sign + match.Groups[3].Value);
+            var City = match.Groups[1].Value;
+            var Neighbor = match.Groups[4].Value;
+
+            var vertex = vertices.Where(route => route.City == City).SingleOrDefault() ?? new TSPVertex { City = City, Visited = false };
+
+            if (!vertices.Any(route => route.City == vertex.City))
+            {
+                vertex.Neighbors.Add(Neighbor, Distance);
+                vertices.Add(vertex);
+            }
+            else
+            {
+                vertices.Where(route => route.City == City).Select(route => { route.Neighbors.Add(Neighbor, Distance); return route; }).ToList();
+            }
+        }
+
+        //used to save calculated values
+        var updatedVertices = JsonConvert.DeserializeObject<List<TSPVertex>>(JsonConvert.SerializeObject(vertices)) ?? new List<TSPVertex>();
+
+        //sum vertex and neighbors' happiness values to get delta happiness
+        foreach (var vertex in vertices)
+        {
+            foreach (var neighbor in vertex.Neighbors)
+            {
+                var neighborVertexHappiness = vertices.Where(vert => vert.City == neighbor.Key)
+                                                      .Single()
+                                                      .Neighbors
+                                                      .Where(kvp => kvp.Key == vertex.City)
+                                                      .Single()
+                                                      .Value;
+
+                updatedVertices.Where(vert => vert.City == vertex.City).Single().Neighbors[neighbor.Key] += neighborVertexHappiness;
+            }
+        }
+
+        var happiness = 0;
+
+        //nearest neighbor algorithm doesn't work for this one
+        foreach (var permutation in updatedVertices.Permute())
+        {
+            var iterationHappiness = 0;
+
+            foreach (var vertex in permutation)
+            {
+                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;                
+            }
+
+            happiness = Math.Max(happiness, iterationHappiness);
+        }
+
+        Console.WriteLine($"Part 1: {happiness}");
+
+        updatedVertices.Add(new TSPVertex{
+            City = "Corbin",
+            Visited = false
+        });
+
+        foreach(var vertex in updatedVertices)
+        {
+            if(vertex.City != "Corbin")
+            {
+                vertex.Neighbors.Add("Corbin", 0);
+                updatedVertices.Where(vert => vert.City == "Corbin").Single().Neighbors.Add(vertex.City, 0);
+            }
+        }
+
+        happiness = 0;
+
+        foreach (var permutation in updatedVertices.Permute())
+        {
+            var iterationHappiness = 0;
+
+            foreach (var vertex in permutation)
+            {
+                iterationHappiness += vertex.Neighbors.Where(kvp => kvp.Key == GetNext(permutation, vertex)?.City).Single().Value;                
+            }
+
+            happiness = Math.Max(happiness, iterationHappiness);
+        }
+
+        Console.WriteLine($"Part 2: {happiness}");
     }
 }
