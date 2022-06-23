@@ -17,7 +17,7 @@ dayToRun.Invoke(null, new object[] { data });
 
 public static class AdventOfCode
 {
-    #region Objects    
+    #region Objects
 
     public class Instruction
     {
@@ -124,7 +124,7 @@ public static class AdventOfCode
         public int Damage { get; set; } = 0;
         public int Mana { get; set; } = 0;
         public int ManaSpent { get; set; } = 0;
-        public int Armor {get; set;} = 0;
+        public int Armor { get; set; } = 0;
         public List<Spell> Spells { get; set; } = new List<Spell>();
 
         public Player Copy()
@@ -445,7 +445,7 @@ public static class AdventOfCode
     public static void Day7(string[] data)
     {
         //There's probably signficantly more efficient ways to do this one
-        // but was fun to figure out 
+        // but was fun to figure out
         // 10/10
         #region Setup
 
@@ -681,7 +681,7 @@ public static class AdventOfCode
             var currentVertex = vertex;
             var iterationDistance = 0;
 
-            //loop until ever vertext has been visisted      
+            //loop until ever vertext has been visisted
             while (vertices.Any(vertex => vertex.Visited == false))
             {
                 //null check so c# stops complaining
@@ -834,7 +834,7 @@ public static class AdventOfCode
         var sum = Regex.Matches(data[0], @"-?\d+").Sum(match => int.Parse(match.Value));
         Console.WriteLine($"Part 1: {sum}");
 
-        //Newtonsoft's Json.NET is much easier to work with 
+        //Newtonsoft's Json.NET is much easier to work with
         // in this case than System.Text.Json
         var json = JObject.Parse(data[0]);
 
@@ -1387,7 +1387,7 @@ public static class AdventOfCode
     public static void Day20(string[] data)
     {
         //I should probably stop doing these so late.
-        // stuff that would probably be obvious to me 
+        // stuff that would probably be obvious to me
         // is not so and I'm looking at answers to see
         // where I've gone wrong.
 
@@ -1527,16 +1527,17 @@ public static class AdventOfCode
             Spells = playerSpells
         };
 
-        var boss = new Player{
+        var boss = new Player
+        {
             Health = int.Parse(Regex.Matches(data[0], @"\d+").First().Groups[0].Value),
             Damage = int.Parse(Regex.Matches(data[1], @"\d+").First().Groups[0].Value)
         };
-        
+
         Action<Player, Player> ResolveEffects = (player, boss) =>
         {
             var shield = player.Spells.Single(spell => spell.Name == "Shield");
             var poison = player.Spells.Single(spell => spell.Name == "Poison");
-            var recharge = player.Spells.Single(spell => spell.Name == "Recharge");            
+            var recharge = player.Spells.Single(spell => spell.Name == "Recharge");
 
             boss.Health -= poison.Effect.Active ? poison.Effect.Damage : 0;
             player.Mana += recharge.Effect.Active ? recharge.Effect.Mana : 0;
@@ -1577,20 +1578,20 @@ public static class AdventOfCode
 
         };
 
-        Action<Player, Player, bool> Fight = null;
+        Action<Player, Player, bool> Fight = (player, boss, hardMode) => { };
 
         Fight = (player, boss, hardMode) =>
         {
-            foreach (var spell in player.Spells.Where(spell => !spell.Effect.Active 
+            foreach (var spell in player.Spells.Where(spell => !spell.Effect.Active
                                                         && spell.Cost <= player.Mana
                                                         && spell.Cost + player.ManaSpent < minMana))
             {
                 var newPlayer = player.Copy();
-                var newBoss = boss.Copy();         
-                
+                var newBoss = boss.Copy();
+
                 #region Player
-                
-                if(hardMode)
+
+                if (hardMode)
                     newPlayer.Health -= 1;
 
                 newPlayer.Mana -= spell.Cost;
@@ -1616,9 +1617,9 @@ public static class AdventOfCode
                 {
                     minMana = Math.Min(newPlayer.ManaSpent, minMana);
                     break;
-                }               
+                }
 
-                #endregion              
+                #endregion
                 ResolveEffects(newPlayer, newBoss);
 
                 if (newBoss.Health <= 0)
@@ -1646,114 +1647,116 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {minMana}");
     }
 
-    public static void Day23(string[] data){
+    public static void Day23(string[] data)
+    {
         //initially was using int but part 2 was causing an overflow
-        var registers = new Dictionary<string, long>() {{"a" , 0}, {"b", 0}};
+        var registers = new Dictionary<string, long>() { { "a", 0 }, { "b", 0 } };
 
-        Func<long, long> HLF = register => { return register >> 1;};
-        Func<long, long> TPL = register => { return register * 3;};
-        Func<long, long> INC = register => { return register + 1;};
-        Func<long, bool> JIE = register => { return register % 2 == 0;};
-        Func<long, bool> JIO = register => { return register == 1;};
+        Func<long, long> HLF = register => { return register >> 1; };
+        Func<long, long> TPL = register => { return register * 3; };
+        Func<long, long> INC = register => { return register + 1; };
+        Func<long, bool> JIE = register => { return register % 2 == 0; };
+        Func<long, bool> JIO = register => { return register == 1; };
 
-        for(int i = 0; i < data.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
             var instruction = data[i].Substring(0, 3);
             var register = "";
             var offset = 0;
 
-            if(instruction != "jmp")
+            if (instruction != "jmp")
                 register = data[i].Substring(4, 1);
 
-            if(instruction == "jmp" || instruction == "jie" || instruction == "jio")
+            if (instruction == "jmp" || instruction == "jie" || instruction == "jio")
                 offset = int.Parse(Regex.Matches(data[i], @"((\+|-)\d+)").First().Groups[0].Value);
 
-            switch(instruction)
-            {                
+            switch (instruction)
+            {
                 case "hlf":
                     registers[register] = HLF(registers[register]);
-                break;
+                    break;
 
                 case "tpl":
                     registers[register] = TPL(registers[register]);
-                break;
+                    break;
 
                 case "inc":
                     registers[register] = INC(registers[register]);
-                break;
+                    break;
 
                 case "jmp":
                     i += offset - 1;
-                break;
+                    break;
 
                 case "jie":
                     i += JIE(registers[register]) ? offset - 1 : 0;
-                break;
+                    break;
 
                 case "jio":
                     i += JIO(registers[register]) ? offset - 1 : 0;
-                break;
+                    break;
             }
         }
-    
+
         Console.WriteLine(registers["b"]);
 
-        registers = new Dictionary<string, long>() {{"a" , 1}, {"b", 0}};
+        registers = new Dictionary<string, long>() { { "a", 1 }, { "b", 0 } };
 
-        for(int i = 0; i < data.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
             var instruction = data[i].Substring(0, 3);
             var register = "";
             var offset = 0;
 
-            if(instruction != "jmp")
+            if (instruction != "jmp")
                 register = data[i].Substring(4, 1);
 
-            if(instruction == "jmp" || instruction == "jie" || instruction == "jio")
+            if (instruction == "jmp" || instruction == "jie" || instruction == "jio")
                 offset = int.Parse(Regex.Matches(data[i], @"((\+|-)\d+)").First().Groups[0].Value);
 
-            switch(instruction)
-            {                
+            switch (instruction)
+            {
                 case "hlf":
                     registers[register] = HLF(registers[register]);
-                break;
+                    break;
 
                 case "tpl":
                     registers[register] = TPL(registers[register]);
-                break;
+                    break;
 
                 case "inc":
                     registers[register] = INC(registers[register]);
-                break;
+                    break;
 
                 //offset - 1 since we will increment the offset at the beginning of the loop
                 case "jmp":
                     i += offset - 1;
-                break;
+                    break;
 
                 case "jie":
                     i += JIE(registers[register]) ? offset - 1 : 0;
-                break;
+                    break;
 
                 case "jio":
                     i += JIO(registers[register]) ? offset - 1 : 0;
-                break;
+                    break;
 
                 default:
-                throw new Exception("Invalid instruction");
+                    throw new Exception("Invalid instruction");
             }
         }
 
-         Console.WriteLine(registers["b"]);
+        Console.WriteLine(registers["b"]);
     }
 
-    public static void Day24(string[] data){
+    public static void Day24(string[] data)
+    {
         var packages = Array.ConvertAll(data, long.Parse);
         var groupSum = packages.Sum() / 3;
 
         var possibleGroups = new List<IReadOnlyCollection<long>>();
 
-        foreach(var size in Enumerable.Range(1, (int)Math.Ceiling((double)packages.Length / 2)))
+        foreach (var size in Enumerable.Range(1, (int)Math.Ceiling((double)packages.Length / 2)))
         {
             var combos = new Combinations<long>(packages, size);
             possibleGroups.AddRange(combos.Where(combo => combo.Sum() == groupSum));
@@ -1772,7 +1775,7 @@ public static class AdventOfCode
 
         possibleGroups = new List<IReadOnlyCollection<long>>();
 
-        foreach(var size in Enumerable.Range(1, (int)Math.Ceiling((double)packages.Length / 2)))
+        foreach (var size in Enumerable.Range(1, (int)Math.Ceiling((double)packages.Length / 2)))
         {
             var combos = new Combinations<long>(packages, size);
             possibleGroups.AddRange(combos.Where(combo => combo.Sum() == groupSum));
@@ -1800,20 +1803,23 @@ public static class AdventOfCode
         var row = 1;
         var col = 1;
 
-        while(true)
-        {   
-            if(row == 1){
+        while (true)
+        {
+            if (row == 1)
+            {
                 row = col + 1;
                 col = 1;
             }
-            else{
+            else
+            {
                 row -= 1;
-                col += 1;           
+                col += 1;
             }
 
             code = (code * 252533) % 33554393;
 
-            if(row == targetRow && col == targetCol){
+            if (row == targetRow && col == targetCol)
+            {
                 break;
             }
         }
