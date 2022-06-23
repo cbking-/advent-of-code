@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -231,9 +231,9 @@ public static class AdventOfCode
         var niceStringRuleTwo = "([a-z])\\1";
         var niceStringRuleThree = "^(?!.*(ab|cd|pq|xy)).*$";
 
-        var niceStrings = lines.Where(line =>  Regex.IsMatch(line, niceStringRuleOne) 
-                                            && Regex.IsMatch(line, niceStringRuleTwo) 
-                                            && Regex.IsMatch(line, niceStringRuleThree) )
+        var niceStrings = lines.Where(line => Regex.IsMatch(line, niceStringRuleOne)
+                                            && Regex.IsMatch(line, niceStringRuleTwo)
+                                            && Regex.IsMatch(line, niceStringRuleThree))
                                 .Count();
 
         Console.WriteLine($"Part 1: {niceStrings}");
@@ -241,10 +241,99 @@ public static class AdventOfCode
         niceStringRuleOne = "([a-z][a-z]).*\\1";
         niceStringRuleTwo = "([a-z])[a-z]\\1";
 
-        niceStrings = lines.Where(line =>  Regex.IsMatch(line, niceStringRuleOne) 
+        niceStrings = lines.Where(line => Regex.IsMatch(line, niceStringRuleOne)
                                         && Regex.IsMatch(line, niceStringRuleTwo))
                                 .Count();
 
         Console.WriteLine($"Part 2: {niceStrings}");
+    }
+
+    public static async Task Day6()
+    {
+        var data = await LoadDataAsync("input6");
+
+        var lines = data.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+        var instructions = lines.Select(line =>
+        {
+            return new
+            {
+                State = Regex.Matches(line, "turn on|turn off|toggle").First().Value,
+                Start = Regex.Matches(line, @"\d{0,3},\d{0,3}(?=(\sthrough))").First().Value.Split(',').Select<string, int>(int.Parse).ToArray(),
+                End = Regex.Matches(line, @"(?<=(through\s))\d{0,3},\d{0,3}").First().Value.Split(',').Select<string, int>(int.Parse).ToArray()
+            };
+        });
+
+        var grid = Enumerable.Repeat(false, 1000 * 1000).ToArray();
+
+        foreach (var instruction in instructions)
+        {
+            var start = new int[2];
+
+            Array.Copy(instruction.Start, start, 2);
+
+            while (start[1] <= instruction.End[1])
+            {
+                while (start[0] <= instruction.End[0])
+                {
+                    var location = start[0] + start[1] * 1000;
+                    var lightState = grid[location];
+
+                    if (instruction.State == "turn on")
+                        lightState = true;
+
+                    if (instruction.State == "turn off")
+                        lightState = false;
+
+                    if (instruction.State == "toggle")
+                        lightState = !lightState;
+
+                    grid[location] = lightState;
+
+                    start[0] += 1;
+                }
+
+                start[0] = instruction.Start[0];
+                start[1] += 1;
+            }
+        }
+
+        Console.WriteLine($"Part 1: {grid.Count(light => light)}");
+
+        var grid2 = Enumerable.Repeat(0, 1000 * 1000).ToArray();
+
+        foreach (var instruction in instructions)
+        {
+            var start = new int[2];
+
+            Array.Copy(instruction.Start, start, 2);
+
+            while (start[1] <= instruction.End[1])
+            {
+                while (start[0] <= instruction.End[0])
+                {
+                    var location = start[0] + start[1] * 1000;
+                    var lightState = grid2[location];
+
+                    if (instruction.State == "turn on")
+                        lightState += 1;
+
+                    if (instruction.State == "turn off")
+                        lightState = lightState - 1 >= 0 ? lightState - 1 : 0;
+
+                    if (instruction.State == "toggle")
+                        lightState += 2;
+
+                    grid2[location] = lightState;
+
+                    start[0] += 1;
+                }
+
+                start[0] = instruction.Start[0];
+                start[1] += 1;
+            }
+        }
+
+        Console.WriteLine($"Part 2: {grid2.Sum(light => light)}");
     }
 }
