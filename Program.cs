@@ -38,6 +38,14 @@ public static class AdventOfCode
         // since two windows share two of the same numbers, we don't need to calculate any sums
         // only compare the first number of the first window and the last number of the second window       
         Console.WriteLine($"Part 2: {data.Skip(3).Select((value, index) => int.Parse(value) > int.Parse(data[index])).Count(value => value)}");
+
+        //Another options (and maybe makes more sense) is to use Zip as we don't rely on knowing Skip is indexed zero        
+        //Console.WriteLine($"Part 1: {data.Zip(data.Skip(1), (first, second) => int.Parse(first) < int.Parse(second)).Count(value => value)}");
+        //Console.WriteLine($"Part 2: {data.Zip(data.Skip(3), (first, second) => int.Parse(first) < int.Parse(second)).Count(value => value)}");
+
+        //Aggregate is an option here as well though I don't like it as much as Zip
+        //Console.WriteLine($"Part 1: {data.Skip(1).Select((Value, Index) => new {Value, Index}).Aggregate(0, (total, line) => int.Parse(data[line.Index]) < int.Parse(line.Value) ? total += 1 : total)}");
+        //Console.WriteLine($"Part 2: {data.Skip(3).Select((Value, Index) => new {Value, Index}).Aggregate(0, (total, line) => int.Parse(data[line.Index]) < int.Parse(line.Value) ? total += 1 : total)}");
     }
 
 }
