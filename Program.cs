@@ -6,18 +6,22 @@ using System.Text.RegularExpressions;
 
 var adventType = typeof(AdventOfCode);
 
-var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
+var dataToLoad = adventType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
+dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs\\{args[0]}.txt" });
+var data = await loadTask;
 
-dynamic? task = dayToRun.Invoke(null, null);
-await task;
+var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
+dayToRun.Invoke(null, new object[] { data });
 
 public static class AdventOfCode
 {
     #region Helpers
-    public static async Task<String> LoadDataAsync(string fileName)
+
+    public static async Task<string[]> LoadDataAsync(string fileName)
     {
         using var file = new StreamReader(fileName);
-        return await file.ReadToEndAsync();
+        var data = await file.ReadToEndAsync();
+        return data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
     }
 
     //https://stackoverflow.com/a/14663233/17400290
@@ -70,18 +74,16 @@ public static class AdventOfCode
     }
     #endregion
 
-    public static async Task Day1()
+    public static void Day1(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input1.txt");
-
-        var answer = (data.Where(character => character == '(').Count()) - (data.Where(character => character == ')').Count());
+        var answer = (data[0].Where(character => character == '(').Count()) - (data[0].Where(character => character == ')').Count());
 
         Console.WriteLine($"Part 1: {answer}");
 
         var floor = 0;
         answer = 0;
 
-        foreach (var character in data)
+        foreach (var character in data[0])
         {
             if (floor == -1)
                 break;
@@ -94,29 +96,26 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {answer}");
     }
 
-    public static async Task Day2()
+    public static void Day2(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input2.txt");
-        var fixedData = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var answer = data.Select(row => row.Split('x'))
+                                   .Sum(dimension =>
+                                   {
+                                       var length = int.Parse(dimension[0]);
+                                       var width = int.Parse(dimension[1]);
+                                       var height = int.Parse(dimension[2]);
 
-        var answer = fixedData.Select(row => row.Split('x'))
-                                  .Sum(dimension =>
-                                  {
-                                      var length = int.Parse(dimension[0]);
-                                      var width = int.Parse(dimension[1]);
-                                      var height = int.Parse(dimension[2]);
+                                       var sideOne = length * width;
+                                       var sideTwo = width * height;
+                                       var sideThree = length * height;
+                                       var smallSide = (new[] { sideOne, sideTwo, sideThree }).Min();
 
-                                      var sideOne = length * width;
-                                      var sideTwo = width * height;
-                                      var sideThree = length * height;
-                                      var smallSide = (new[] { sideOne, sideTwo, sideThree }).Min();
-
-                                      return (2 * sideOne) + (2 * sideTwo) + (2 * sideThree) + smallSide;
-                                  });
+                                       return (2 * sideOne) + (2 * sideTwo) + (2 * sideThree) + smallSide;
+                                   });
 
         Console.WriteLine($"Part 1: {answer}");
 
-        answer = fixedData.Select(row => row.Split('x'))
+        answer = data.Select(row => row.Split('x'))
                                   .Sum(dimension =>
                                   {
                                       var length = int.Parse(dimension[0]);
@@ -132,16 +131,14 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {answer}");
     }
 
-    public static async Task Day3()
+    public static void Day3(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input3.txt");
-
         var houses = new HashSet<int[]>(new IntArrayKeyComparer());
         var x = 0;
         var y = 0;
         houses.Add(new int[] { x, y });
 
-        foreach (var character in data)
+        foreach (var character in data[0])
         {
             if (character == '^')
                 y -= 1;
@@ -165,7 +162,7 @@ public static class AdventOfCode
         y = 0;
         houses.Add(new int[] { x, y });
 
-        foreach (var character in data.Where((character, index) => index % 2 == 0))
+        foreach (var character in data[0].Where((character, index) => index % 2 == 0))
         {
             if (character == '^')
                 y -= 1;
@@ -185,7 +182,7 @@ public static class AdventOfCode
         x = 0;
         y = 0;
 
-        foreach (var character in data.Where((character, index) => index % 2 != 0))
+        foreach (var character in data[0].Where((character, index) => index % 2 != 0))
         {
             if (character == '^')
                 y -= 1;
@@ -205,15 +202,13 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {houses.Count()}");
     }
 
-    public static async Task Day4()
+    public static void Day4(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input4.txt");
-
         var answer = 0;
 
         while (true)
         {
-            var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes($"{data}{answer}")) ?? new byte[] { };
+            var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes($"{data[0]}{answer}")) ?? new byte[] { };
 
             if (Convert.ToHexString(md5).StartsWith("00000"))
             {
@@ -227,7 +222,7 @@ public static class AdventOfCode
         answer = 0;
         while (true)
         {
-            var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes($"{data}{answer}")) ?? new byte[] { };
+            var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes($"{data[0]}{answer}")) ?? new byte[] { };
 
             if (Convert.ToHexString(md5).StartsWith("000000"))
             {
@@ -240,17 +235,13 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {answer}");
     }
 
-    public static async Task Day5()
+    public static void Day5(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input5.txt");
-
-        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-
         var niceStringRuleOne = "^(.*[aeiou].*){3,}$";
         var niceStringRuleTwo = "([a-z])\\1";
         var niceStringRuleThree = "^(?!.*(ab|cd|pq|xy)).*$";
 
-        var niceStrings = lines.Where(line => Regex.IsMatch(line, niceStringRuleOne)
+        var niceStrings = data.Where(line => Regex.IsMatch(line, niceStringRuleOne)
                                             && Regex.IsMatch(line, niceStringRuleTwo)
                                             && Regex.IsMatch(line, niceStringRuleThree))
                                 .Count();
@@ -260,20 +251,16 @@ public static class AdventOfCode
         niceStringRuleOne = "([a-z][a-z]).*\\1";
         niceStringRuleTwo = "([a-z])[a-z]\\1";
 
-        niceStrings = lines.Where(line => Regex.IsMatch(line, niceStringRuleOne)
+        niceStrings = data.Where(line => Regex.IsMatch(line, niceStringRuleOne)
                                         && Regex.IsMatch(line, niceStringRuleTwo))
                                 .Count();
 
         Console.WriteLine($"Part 2: {niceStrings}");
     }
 
-    public static async Task Day6()
+    public static void Day6(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input6.txt");
-
-        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-
-        var instructions = lines.Select(line =>
+        var instructions = data.Select(line =>
         {
             return new
             {
@@ -356,17 +343,14 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {grid2.Sum(light => light)}");
     }
 
-    public static async Task Day7()
+    public static void Day7(string[] data)
     {
         //There's probably signficantly more efficient ways to do this one
         // but was fun to figure out 
         // 10/10
         #region Setup
-        var data = await LoadDataAsync("inputs\\input7.txt");
 
-        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-
-        var instructions = lines.Select(line =>
+        var instructions = data.Select(line =>
         {
             var sources = line.Split(" -> ")[0];
             var destination = line.Split(" -> ")[1];
@@ -514,14 +498,11 @@ public static class AdventOfCode
         #endregion
     }
 
-    public static async Task Day8()
+    public static void Day8(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input8.txt");
-        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var characterSum = data.Sum(line => line.Length);
 
-        var characterSum = lines.Sum(line => line.Length);
-
-        var memorySum = lines.Sum(line =>
+        var memorySum = data.Sum(line =>
         {
             line = line.Substring(1, line.Length - 2);
             line = Regex.Replace(line, @"\\\\", @"A");
@@ -532,7 +513,7 @@ public static class AdventOfCode
 
         Console.WriteLine($"Part 1: {characterSum - memorySum}");
 
-        var encodedSum = lines.Sum(line =>
+        var encodedSum = data.Sum(line =>
         {
             //some lines end with \\" which will mess up replacment later
             line = line.Substring(1, line.Length - 2);
@@ -545,14 +526,11 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {encodedSum - characterSum}");
     }
 
-    public static async Task Day9()
+    public static void Day9(string[] data)
     {
-        var data = await LoadDataAsync("inputs\\input9.txt");
-        var lines = data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-
         var vertices = new List<TSPVertex>();
 
-        foreach (var line in lines)
+        foreach (var line in data)
         {
             var pattern = @"(\w+) to (\w+) = (\d+)";
             var matches = Regex.Matches(line, pattern);
@@ -634,7 +612,7 @@ public static class AdventOfCode
         {
             var currentVertex = vertex;
             var iterationDistance = 0;
-     
+
             while (vertices.Any(vertex => vertex.Visited == false))
             {
                 if (currentVertex is null)
@@ -657,28 +635,35 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {distance}");
     }
 
-    public static async Task Day10(){
-        var data = await LoadDataAsync("inputs\\input10.txt");        
-        var iteration = data; 
+    public static void Day10(string[] data)
+    {
+        var iteration = data[0];
 
         var pattern = @"((\d)\2{0,})+";
-        
-        for(var step = 1; step <= 40; step++){
-            var captures = Regex.Match(iteration, pattern).Groups[1].Captures;
-            
-            iteration = string.Concat(captures.Select(capture => capture.Length.ToString() + capture.Value.Last()));
-        }  
-        
-        Console.WriteLine($"Part 1: {iteration.Length}"); 
-        
-        iteration = data; 
 
-        for(var step = 1; step <= 50; step++){
+        for (var step = 1; step <= 40; step++)
+        {
             var captures = Regex.Match(iteration, pattern).Groups[1].Captures;
-            
+
             iteration = string.Concat(captures.Select(capture => capture.Length.ToString() + capture.Value.Last()));
-        }  
-        
-        Console.WriteLine($"Part 1: {iteration.Length}"); 
+        }
+
+        Console.WriteLine($"Part 1: {iteration.Length}");
+
+        iteration = data[0];
+
+        for (var step = 1; step <= 50; step++)
+        {
+            var captures = Regex.Match(iteration, pattern).Groups[1].Captures;
+
+            iteration = string.Concat(captures.Select(capture => capture.Length.ToString() + capture.Value.Last()));
+        }
+
+        Console.WriteLine($"Part 1: {iteration.Length}");
+    }
+
+    public static void Day11(string[] data)
+    {
+
     }
 }
