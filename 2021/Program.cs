@@ -574,11 +574,11 @@ public static class AdventOfCode
 
             basin = basin.Where(location => map.ElementAtOrDefault(location) != '9' && map.ElementAtOrDefault(location) != 0).ToList();
 
-            IEnumerable<int> searchIndexes;
+            var searchIndexes = basin.AsEnumerable(); ;
 
             do
             {
-                searchIndexes = basin.AsEnumerable();
+                var initialIndexes = basin.AsEnumerable();
 
                 var addToBasin = searchIndexes.SelectMany(index => new List<int>{
                                                                             index % width == 0 ? -1 : index - 1,
@@ -590,7 +590,7 @@ public static class AdventOfCode
 
                 basin = basin.Union(addToBasin).ToList();
 
-                searchIndexes = basin.Except(searchIndexes);
+                searchIndexes = basin.Except(initialIndexes);
 
             } while (searchIndexes.Count() > 0);
 
