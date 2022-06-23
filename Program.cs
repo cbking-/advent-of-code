@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,6 +18,7 @@ public static class AdventOfCode
         return await file.ReadToEndAsync();
     }
 
+    //https://stackoverflow.com/a/14663233/17400290
     public class IntArrayKeyComparer : IEqualityComparer<int[]>
     {
         public bool Equals(int[]? x, int[]? y)
