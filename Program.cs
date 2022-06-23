@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 var adventType = typeof(AdventOfCode);
 
 var dataToLoad = adventType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
-dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs\\{args[0]}.txt" });
+dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs{Path.DirectorySeparatorChar}{args[0]}.txt" });
 var data = await loadTask;
 
 var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
@@ -188,25 +188,38 @@ public static class AdventOfCode
 
     public class Aunt
     {
-        public int Children { get; set; } = 0;
+        [JsonIgnore]
+        public int Number {get; set;} = 0;
 
-        public int Cats { get; set; } = 0;
+        [JsonProperty("children")]
+        public int? Children { get; set; }
 
-        public int Samoyeds {get; set;} = 0;
+        [JsonProperty("cats")]
+        public int? Cats { get; set; }
 
-        public int Pomeranians {get; set; } = 0;
+        [JsonProperty("samoyeds")]
+        public int? Samoyeds { get; set; }
 
-        public int Akitas {get; set;} = 0;
+        [JsonProperty("pomeranians")]
+        public int? Pomeranians { get; set; }
 
-        public int Vizslas {get; set; } = 0;
+        [JsonProperty("akitas")]
+        public int? Akitas { get; set; }
 
-        public int Goldfish {get; set; } = 0;
+        [JsonProperty("vizslas")]
+        public int? Vizslas { get; set; }
 
-        public int Trees {get; set;} = 0;
+        [JsonProperty("goldfish")]
+        public int? Goldfish { get; set; }
 
-        public int Cars {get; set;} = 0;
+        [JsonProperty("trees")]
+        public int? Trees { get; set; }
 
-        public int Perfumes {get; set; } = 0;
+        [JsonProperty("cars")]
+        public int? Cars { get; set; }
+
+        [JsonProperty("perfumes")]
+        public int? Perfumes { get; set; }
     }
     #endregion
 
@@ -1136,15 +1149,65 @@ public static class AdventOfCode
 
     public static void Day16(string[] data)
     {
-        // children: 3
-        // cats: 7
-        // samoyeds: 2
-        // pomeranians: 3
-        // akitas: 0
-        // vizslas: 0
-        // goldfish: 5
-        // trees: 3
-        // cars: 2
-        // perfumes: 1
+        var auntToFind = new Aunt{
+            Children = 3,
+            Cats = 7,
+            Samoyeds = 2,
+            Pomeranians = 3,
+            Akitas = 0,
+            Vizslas = 0,
+            Goldfish = 5,
+            Trees = 3,
+            Cars = 2,
+            Perfumes = 1
+        };
+
+        var aunts = new List<Aunt>();
+        foreach (var line in data.Select((value, index) => new { index, value }))
+        {
+            //converting line to JSON so it's easily parsed to object
+            var sue = Regex.Replace(Regex.Replace(line.value, @"Sue \d+:", ""), @"(?<=\s)(\w+)(?=:)", @"""$1""");
+
+            sue = $"{{ {sue} }}";
+
+            var aunt = JsonConvert.DeserializeObject<Aunt>(sue) ?? new Aunt();
+            aunt.Number = line.index + 1;
+            aunts.Add(aunt);
+        }
+
+        //https://stackoverflow.com/questions/31114892/using-linq-to-find-best-match-across-multiple-properties
+        var grouping = aunts.GroupBy(aunt => 
+            (aunt.Akitas == auntToFind.Akitas ? 1 : 0) +
+            (aunt.Cars == auntToFind.Cars ? 1 : 0) +
+            (aunt.Cats == auntToFind.Cats ? 1 : 0) +
+            (aunt.Children == auntToFind.Children ? 1 : 0) +
+            (aunt.Goldfish == auntToFind.Goldfish ? 1 : 0) +
+            (aunt.Perfumes == auntToFind.Perfumes ? 1 : 0) +
+            (aunt.Pomeranians == auntToFind.Pomeranians ? 1 : 0) +
+            (aunt.Samoyeds == auntToFind.Samoyeds ? 1 : 0) +
+            (aunt.Trees == auntToFind.Trees ? 1 : 0) +
+            (aunt.Vizslas == auntToFind.Vizslas ? 1 : 0)
+        );
+
+        var maxCount = grouping.Max(x => x.Key);
+        var resultSet = grouping.FirstOrDefault(x => x.Key == maxCount)?.Select(g => g).Single();
+        Console.WriteLine($"Part 1: {resultSet?.Number}"); 
+
+        grouping = aunts.GroupBy(aunt => 
+            (aunt.Akitas == auntToFind.Akitas ? 1 : 0) +
+            (aunt.Cars == auntToFind.Cars ? 1 : 0) +
+            (aunt.Cats > auntToFind.Cats ? 1 : 0) +
+            (aunt.Children == auntToFind.Children ? 1 : 0) +
+            (aunt.Goldfish < auntToFind.Goldfish ? 1 : 0) +
+            (aunt.Perfumes == auntToFind.Perfumes ? 1 : 0) +
+            (aunt.Pomeranians < auntToFind.Pomeranians ? 1 : 0) +
+            (aunt.Samoyeds == auntToFind.Samoyeds ? 1 : 0) +
+            (aunt.Trees > auntToFind.Trees ? 1 : 0) +
+            (aunt.Vizslas == auntToFind.Vizslas ? 1 : 0)
+        );
+
+        maxCount = grouping.Max(x => x.Key);
+        resultSet = grouping.FirstOrDefault(x => x.Key == maxCount)?.Select(g => g).Single();
+        Console.WriteLine($"Part 1: {resultSet?.Number}");        
     }
 }
