@@ -307,7 +307,7 @@ public static class AdventOfCode
         // This worked for the part one but exponential growth kills part two.
         // This solution keeps track of the number of fish in each day and the new fishes
         // that are generated. The growth is tracked through longs rather than
-        // the size of a List. I keep track of new fish in a separate dictionary
+        // the size of a List. I keep track of new fish in a separate array
         // so they aren't overwritten as the other fish that haven't spawned 
         // are figured out. I'm going to start using a time in the interest
         // of seeing how quick my solutions are and if certain implementations
