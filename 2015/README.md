@@ -16,3 +16,5 @@ Clone to whatever directory your heart desires
 `dotnet run -- Day\d`
 
 Replace `\d` with whatever day you want to see the answer for.
+
+![Complete!](complete.png)
