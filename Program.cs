@@ -124,6 +124,38 @@ public static class AdventOfCode
     {
         return source.Select((Item, Index) => (Item, Index));
     }
+    
+    //https://codereview.stackexchange.com/a/237442
+    /// <summary>
+    /// Finds all the divisors of any positive integer passed as argument. 
+    /// Returns an array of int with all the divisors of the argument.
+    /// Returns null if the argument is zero or negative.
+    /// </summary>
+    public static int[] GetDivisors(int n)
+    {
+        if (n <= 0)
+        {
+            return new int[] { };
+        }
+
+        List<int> divisors = new List<int>();
+
+        for (int i = 1; i <= Math.Sqrt(n); i++)
+        {
+            if (n % i == 0)
+            {
+                divisors.Add(i);
+                if (i != n / i)
+                {
+                    divisors.Add(n / i);
+                }
+            }
+        }
+
+        divisors.Sort();
+
+        return divisors.ToArray();
+    }
 
     public class Ingredient
     {
@@ -1327,4 +1359,95 @@ public static class AdventOfCode
         Console.WriteLine($"Part 2: {grid.Count(light => light)}");
     }
 
+    public static void Day19(string[] data)
+    {
+        //key will be the replacement and value is the replaced
+        var maps = new Dictionary<string, string>();
+        var molecule = "";
+        var replacementMolecules = new HashSet<string>();
+
+        foreach (var line in data)
+        {
+            //last line is the medicine molecule
+            if (line == data.Last())
+            {
+                molecule = line;
+            }
+            else
+            {
+                maps.Add(line.Split(" => ")[1], line.Split(" => ")[0]);
+            }
+        }
+
+        var mapGroups = maps.GroupBy(kvp => kvp.Value);
+
+        foreach (var mapGroup in mapGroups)
+        {
+            var moleculeToReplace = mapGroup.Key;
+
+            foreach (var replacement in mapGroup)
+            {
+                var match = Regex.Match(molecule, moleculeToReplace);
+
+                while (match.Success)
+                {
+                    var capture = match.Captures.First();
+                    var newMolecule = molecule.Remove(capture.Index, capture.Length).Insert(capture.Index, replacement.Key);
+                    replacementMolecules.Add(newMolecule);
+                    match = match.NextMatch();
+                }
+            }
+        }
+
+        Console.WriteLine($"Part 1: {replacementMolecules.Count}");
+
+        //seems like you need to know some logic and/or more advanced algorithms
+        // shamelessly stealing logic from top comment of reddit solution thread
+        // https://www.reddit.com/r/adventofcode/comments/3xflz8/comment/cy4etju/?utm_source=share&utm_medium=web2x&context=3
+
+        //I think some before this one haven't *required* code but this one seemed (to me) to require some understanding
+        // of the world that I don't have.
+        var elements = Regex.Matches(molecule, "[A-Z][a-z]?").Count;
+        var radon = Regex.Matches(molecule, "Rn").Count;
+        var argon = Regex.Matches(molecule, "Ar").Count;
+        var yttrium = Regex.Matches(molecule, "Y").Count;
+
+        var answer = elements - (radon + argon) - (yttrium * 2) - 1;
+        Console.WriteLine($"Part 2: {answer}");
+    }
+
+    public static void Day20(string[] data)
+    {
+        //I should probably stop doing these so late.
+        // stuff that would probably be obvious to me 
+        // is not so and I'm looking at answers to see
+        // where I've gone wrong.
+
+        var house = 1;
+        var numToFind = int.Parse(data[0]);
+
+        while(true){
+            var sum = GetDivisors(house).Sum() * 10;
+
+            if(sum >= numToFind)
+                break;
+
+            house++;
+        }
+
+        Console.WriteLine($"Part 1: {house}");
+
+        house = 1;
+
+        while(true){
+            var sum = GetDivisors(house).Where(elf => house / elf <= 50).Sum() * 11;
+
+            if(sum >= numToFind)
+                break;
+
+            house++;
+        }
+
+        Console.WriteLine($"Part 2: {house}");
+    }
 }
