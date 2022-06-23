@@ -1,12 +1,12 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
 
-var adventType = typeof(AdventOfCode);
-
-var dataToLoad = adventType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
+var helperType = typeof(Core.Helpers);
+var dataToLoad = helperType.GetMethod("LoadDataAsync", BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Method not found");
 dynamic? loadTask = dataToLoad.Invoke(null, new object[] { $"inputs{Path.DirectorySeparatorChar}{args[0]}.txt" });
 var data = await loadTask;
 
+var adventType = typeof(AdventOfCode);
 var dayToRun = adventType.GetMethod(args[0], BindingFlags.Static | BindingFlags.Public) ?? throw new ArgumentException("Invalid day");
 dayToRun.Invoke(null, new object[] { data });
 
