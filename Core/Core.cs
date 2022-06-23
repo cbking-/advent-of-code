@@ -1,4 +1,6 @@
-﻿namespace Core;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Core;
 public static class Helpers
 {
     public static async Task<string[]> LoadDataAsync(string day)
@@ -73,14 +75,14 @@ public static class Helpers
         }
     }
 
-     public static IEnumerable<(T Item, int Index)> WithIndex<T>(this IEnumerable<T> source)
+    public static IEnumerable<(T Item, int Index)> WithIndex<T>(this IEnumerable<T> source)
     {
         return source.Select((Item, Index) => (Item, Index));
     }
 
     //https://codereview.stackexchange.com/a/237442
     /// <summary>
-    /// Finds all the divisors of any positive integer passed as argument. 
+    /// Finds all the divisors of any positive integer passed as argument.
     /// Returns an array of int with all the divisors of the argument.
     /// Returns null if the argument is zero or negative.
     /// </summary>
@@ -108,5 +110,59 @@ public static class Helpers
         divisors.Sort();
 
         return divisors.ToArray();
+    }
+}
+
+public class Graph
+{
+    public List<GraphNode> Nodes { get; set; } = new List<GraphNode>();
+
+    public Graph() { }
+
+    public Graph(List<GraphNode> _nodes)
+    {
+        Nodes = _nodes;
+    }
+
+    public void AddNode(GraphNode node)
+    {
+        if (Nodes.Contains(node))
+        {
+            Nodes.Single(_node => _node.Identifier == node.Identifier).AddNeighbors(node.Neighbors);
+        }
+        else
+        {
+            Nodes.Add(node);
+        }
+    }
+}
+public class GraphNode : IEquatable<GraphNode>
+{
+    public string Identifier { get; set; }
+
+    public List<string> Neighbors { get; set; } = new List<string>();
+
+    public GraphNode(string identifier)
+    {
+        Identifier = identifier;
+    }
+
+    public void AddNeighbor(string neighbor)
+    {
+        if (!Neighbors.Contains(neighbor))
+            Neighbors.Add(neighbor);
+    }
+
+    public void AddNeighbors(List<string> neighbors)
+    {
+        Neighbors.AddRange(neighbors.Except(Neighbors));
+    }
+
+    public bool Equals(GraphNode? other)
+    {
+        if (other is null)
+            return false;
+
+        return Identifier == other.Identifier;
     }
 }
