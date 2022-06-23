@@ -5,7 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": ".NET Core Launch 2015",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/2015/bin/Debug/net6.0/AdventOfCode2015.dll",
+            "args": ["Day22"],
+            "cwd": "${workspaceFolder}/2015",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Core Launch 2021",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",

@@ -118,7 +118,22 @@ public static class AdventOfCode
         }
     }
 
-    [DebuggerDisplay("{Name}")]
+    public class Player
+    {
+        public int Health { get; set; } = 0;
+        public int Damage { get; set; } = 0;
+        public int Mana { get; set; } = 0;
+        public int ManaSpent { get; set; } = 0;
+        public int Armor {get; set;} = 0;
+        public List<Spell> Spells { get; set; } = new List<Spell>();
+
+        public Player Copy()
+        {
+            return JsonConvert.DeserializeObject<Player>(JsonConvert.SerializeObject(this)) ?? new Player();
+        }
+    }
+
+    [DebuggerDisplay("{Name} {Effect.Active}")]
     public class Spell : IComparable
     {
         public string Name { get; set; } = string.Empty;
@@ -139,13 +154,20 @@ public static class AdventOfCode
         }
     }
 
-    public class Effect
+    public class Effect : ICloneable
     {
         public int Damage { get; set; } = 0;
         public int Heal { get; set; } = 0;
         public int Time { get; set; } = 0;
         public int Armor { get; set; } = 0;
         public int Mana { get; set; } = 0;
+        public int Tick { get; set; } = 0;
+        public bool Active { get; set; } = false;
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
     }
 
     #endregion
@@ -1468,92 +1490,159 @@ public static class AdventOfCode
 
     public static void Day22(string[] data)
     {
-        var mana = 500;
-        var playerHp = 50;
+        /*
+            Apparently this is solvable but I got the most difficult input.
+            This was the most difficult one I've worked on so far. My mind just
+            wouldn't work with it. The order of events is super important and
+            the text on the page isn't necessarily how it's implemented
 
-        var bossHp = int.Parse(Regex.Matches(data[0], @"\d+").First().Groups[0].Value);
-        var bossDmg = int.Parse(Regex.Matches(data[1], @"\d+").First().Groups[0].Value);
+            https://www.reddit.com/r/adventofcode/comments/3xspyl/day_22_solutions/cy86y2x/
+            boss = { hp: 71, damage: 10 }
+            player = { hp: 50, mana: 500 }
 
-        var spells = new List<Spell>{
-            new Spell{ Name = "Magic Missile", Cost = 53,  Effect = new Effect{             Damage = 4 } },
-            new Spell{ Name = "Drain",         Cost = 73,  Effect = new Effect{ Damage = 2, Heal = 2   } },
-            new Spell{ Name = "Shield",        Cost = 113, Effect = new Effect{ Time = 6,   Armor = 7  } },
-            new Spell{ Name = "Poison",        Cost = 173, Effect = new Effect{ Time = 6,   Damage = 3 } },
-            new Spell{ Name = "Recharge",      Cost = 229, Effect = new Effect{ Time = 5,   Mana = 101 } }
+            hard: 1937
+            * Shield -> Recharge -> Poison -> Shield -> Recharge -> Poison -> Shield -> Recharge -> Poison -> Shield -> Magic Missile -> Poison -> Magic Missile
+
+            easy: 1824
+            * Poison -> Recharge -> Shield -> Poison -> Recharge -> Shield -> Poison -> Recharge -> Shield -> Magic Missile -> Poison -> Magic Missile
+            * Poison -> Recharge -> Shield -> Poison -> Recharge -> Shield -> Poison -> Recharge -> Shield -> Poison -> Magic Missile -> Magic Missile
+            * Recharge -> Poison -> Shield -> Recharge -> Poison -> Shield -> Recharge -> Poison -> Shield -> Magic Missile -> Poison -> Magic Missile
+
+            I can't cast spells at random and hope I get the right combination like other solutions can
+        */
+        var minMana = int.MaxValue;
+
+        var playerSpells = new List<Spell>{
+                new Spell{ Name = "Magic Missile", Cost = 53,  Effect = new Effect{             Damage = 4 } },
+                new Spell{ Name = "Drain",         Cost = 73,  Effect = new Effect{ Damage = 2, Heal = 2   } },
+                new Spell{ Name = "Shield",        Cost = 113, Effect = new Effect{ Time = 6,   Armor = 7  } },
+                new Spell{ Name = "Poison",        Cost = 173, Effect = new Effect{ Time = 6,   Damage = 3 } },
+                new Spell{ Name = "Recharge",      Cost = 229, Effect = new Effect{ Time = 5,   Mana = 101 } }
         };
 
-        var shieldActive = false;
-        var shieldTime = 0;
-        var shieldTimer = spells.Where(spell => spell.Name == "Shield").Single().Effect.Time;
-
-        var poisonActive = false;
-        var poisonTime = 0;
-        var poisonTimer = spells.Where(spell => spell.Name == "Poison").Single().Effect.Time;
-
-        var rechargeActive = false;
-        var rechargeTime = 0;
-        var rechargeTimer = spells.Where(spell => spell.Name == "Recharge").Single().Effect.Time;
-
-        while (bossHp > 0)
+        var player = new Player
         {
-            #region Effects
-            if (shieldActive)
-            {
-                shieldTime += 1;
+            Mana = 500,
+            Health = 50,
+            Spells = playerSpells
+        };
 
-                if (shieldTime == shieldTimer)
+        var boss = new Player{
+            Health = int.Parse(Regex.Matches(data[0], @"\d+").First().Groups[0].Value),
+            Damage = int.Parse(Regex.Matches(data[1], @"\d+").First().Groups[0].Value)
+        };
+        
+        Action<Player, Player> ResolveEffects = (player, boss) =>
+        {
+            var shield = player.Spells.Single(spell => spell.Name == "Shield");
+            var poison = player.Spells.Single(spell => spell.Name == "Poison");
+            var recharge = player.Spells.Single(spell => spell.Name == "Recharge");            
+
+            boss.Health -= poison.Effect.Active ? poison.Effect.Damage : 0;
+            player.Mana += recharge.Effect.Active ? recharge.Effect.Mana : 0;
+            player.Armor = shield.Effect.Active ? shield.Effect.Armor : 0;
+
+            if (shield.Effect.Active)
+            {
+                shield.Effect.Tick += 1;
+
+                if (shield.Effect.Tick == shield.Effect.Time)
                 {
-                    shieldActive = false;
-                    shieldTime = 0;
+                    shield.Effect.Active = false;
+                    shield.Effect.Tick = 0;
                 }
             }
 
-            if (rechargeActive)
+            if (recharge.Effect.Active)
             {
-                rechargeTime += 1;
-                mana += spells.Where(spell => spell.Name == "Recharge").Single().Effect.Mana;
+                recharge.Effect.Tick += 1;
 
-                if (rechargeTime == rechargeTimer)
+                if (recharge.Effect.Tick == recharge.Effect.Time)
                 {
-                    rechargeActive = false;
-                    rechargeTime = 0;
+                    recharge.Effect.Active = false;
+                    recharge.Effect.Tick = 0;
                 }
             }
 
-            if(mana <= spells.Where(spell => spell.Name == "Recharge").Single().Cost - spells.Max(spell => spell.Cost))
+            if (poison.Effect.Active)
             {
-                rechargeActive = true;
-            }
+                poison.Effect.Tick += 1;
 
-            var playerArmor = shieldActive ? 7 : 0;
-            
-            if (poisonActive)
-            {
-                poisonTime += 1;
-                bossHp -= spells.Where(spell => spell.Name == "Poison").Single().Effect.Damage;
-
-                if (poisonTime == poisonTimer)
+                if (poison.Effect.Tick == poison.Effect.Time)
                 {
-                    poisonActive = false;
-                    poisonTime = 0;
+                    poison.Effect.Active = false;
+                    poison.Effect.Tick = 0;
                 }
             }
-            #endregion
-            
-            #region Player
 
-            //killed the boss early
-            if (bossHp <= 0)
+        };
+
+        Action<Player, Player, bool> Fight = null;
+
+        Fight = (player, boss, hardMode) =>
+        {
+            foreach (var spell in player.Spells.Where(spell => !spell.Effect.Active 
+                                                        && spell.Cost <= player.Mana
+                                                        && spell.Cost + player.ManaSpent < minMana))
             {
-                break;
-            }
-            #endregion
-
-            #region Boss            
+                var newPlayer = player.Copy();
+                var newBoss = boss.Copy();         
                 
-            playerHp -= bossDmg - playerArmor;
+                #region Player
+                
+                if(hardMode)
+                    newPlayer.Health -= 1;
 
-            #endregion
-        }
+                newPlayer.Mana -= spell.Cost;
+                newPlayer.ManaSpent += spell.Cost;
+
+                if (spell.Name == "Poison" || spell.Name == "Shield" || spell.Name == "Recharge")
+                    newPlayer.Spells.Single(newSpell => newSpell.Name == spell.Name).Effect.Active = true;
+
+                if (spell.Name == "Drain")
+                {
+                    newPlayer.Health += spell.Effect.Heal;
+                    newBoss.Health -= spell.Effect.Damage;
+                }
+
+                if (spell.Name == "Magic Missile")
+                {
+                    newBoss.Health -= spell.Effect.Damage;
+                }
+
+                ResolveEffects(newPlayer, newBoss);
+
+                if (newBoss.Health <= 0)
+                {
+                    minMana = Math.Min(newPlayer.ManaSpent, minMana);
+                    break;
+                }               
+
+                #endregion              
+                ResolveEffects(newPlayer, newBoss);
+
+                if (newBoss.Health <= 0)
+                {
+                    minMana = Math.Min(newPlayer.ManaSpent, minMana);
+                    break;
+                }
+
+                newPlayer.Health -= Math.Max(newBoss.Damage - newPlayer.Armor, 1);
+
+                if (newPlayer.Health > 0)
+                {
+                    Fight(newPlayer, newBoss, hardMode);
+                }
+            }
+        };
+
+        Fight(player, boss, false);
+
+        Console.WriteLine($"Part 1: {minMana}");
+
+        minMana = int.MaxValue;
+        Fight(player, boss, true);
+
+        Console.WriteLine($"Part 2: {minMana}");
     }
 }
