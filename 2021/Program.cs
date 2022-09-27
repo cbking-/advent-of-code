@@ -126,36 +126,10 @@ public static class AdventOfCode
                 }
             }
 
-            switch (TypeId)
-            {
-                case 0:
-                    Value = SubPackets.Sum(packet => packet.Value);
-                    break;
-                case 1:
-                    Value = SubPackets.Aggregate((long)1, (total, item) => total * item.Value);
-                    break;
-                case 2:
-                    Value = SubPackets.Min(packet => packet.Value);
-                    break;
-                case 3:
-                    Value = SubPackets.Max(packet => packet.Value);
-                    break;
-                case 4:
-                    Value = ParseLiteralValue(Payload.Substring(offset));
-                    break;
-                case 5:
-                    Value = SubPackets.First().Value > SubPackets.Skip(1).First().Value ? 1 : 0;
-                    break;
-                case 6:
-                    Value = SubPackets.First().Value < SubPackets.Skip(1).First().Value ? 1 : 0;
-                    break;
-                case 7:
-                    Value = SubPackets.First().Value == SubPackets.Skip(1).First().Value ? 1 : 0;
-                    break;
-                default:
-                    Value = 0;
-                    break;
-            }
+            else
+                Value = ParseLiteralValue(Payload.Substring(offset));
+
+            Value = Evaluate();
         }
 
         public int GetVersionSum()
@@ -1388,6 +1362,6 @@ public static class AdventOfCode
         var decoder = new Packet(binaryPacket);
 
         Console.WriteLine($"Part 1: \x1b[93m{decoder.GetVersionSum()}\x1b[0m");
-        Console.WriteLine($"Part 2: \x1b[93m{decoder.Evaluate()}\x1b[0m");
+        Console.WriteLine($"Part 2: \x1b[93m{decoder.Value}\x1b[0m");
     }
 }
