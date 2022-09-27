@@ -61,63 +61,137 @@ public static class AdventOfCode
         public int Number { get; set; } = 0;
     }
 
-    public class PacketDecoder
+    public class Packet
     {
-        private string Packet = string.Empty;
-        private int Version = 0;
+        private string Payload = string.Empty;
+        public int Version = 0;
         private int TypeId = 0;
         private int LengthTypeId = 0;
-        private string Message = string.Empty;
-        private string SubPackets = string.Empty;
+        public long Value = 0;
+        private List<Packet> SubPackets = new List<Packet>();
+        public int BitLength = 6;
 
-        public PacketDecoder(string _packet)
+        public Packet(string _payload)
         {
-            Packet = _packet;
+            Payload = _payload;
 
-            Version = Convert.ToInt32(Packet.Substring(0, 3), 2);
-            TypeId = Convert.ToInt32(Packet.Substring(3, 3), 2);
-            LengthTypeId = Convert.ToInt32(Packet.Substring(4, 1), 2);
+            var offset = 0;
 
-            if (TypeId == 4)
-            {
-                Message = Packet.Substring(6);
-            }
-            else if (TypeId == 0)
-            {
-                Message = Packet.Substring(7, 15);
-            }
-            else if (TypeId == 1)
-            {
-                Message = Packet.Substring(7, 11);
-            }
-        }
+            Version = Convert.ToInt32(Payload.Substring(offset, 3), 2);
+            offset += 3;
 
-        public List<int> GetVersions()
-        {
-            var headerVersions = new List<int>();
+            TypeId = Convert.ToInt32(Payload.Substring(offset, 3), 2);
+            offset += 3;
 
-            headerVersions.Add(GetVersion());
+            LengthTypeId = Convert.ToInt32(Payload.Substring(offset, 1), 2);
 
             if (TypeId != 4)
             {
-                var nextPackets = new PacketDecoder(Message);
-                headerVersions.AddRange(nextPackets.GetVersions());
+                if (LengthTypeId == 0)
+                {
+                    offset += 1;
+
+                    var subPacketLength = Convert.ToInt32(Payload.Substring(offset, 15), 2);
+                    offset += 15;
+
+                    var parsedLength = 0;
+
+                    while (parsedLength < subPacketLength)
+                    {
+                        var subPacket = new Packet(Payload[offset..]);
+                        offset += subPacket.BitLength;
+                        parsedLength += subPacket.BitLength;
+
+                        SubPackets.Add(subPacket);
+                    }
+
+                    BitLength += 16 + SubPackets.Sum(packet => packet.BitLength);
+                }
+                else if (LengthTypeId == 1)
+                {
+                    offset += 1;
+
+                    var numberOfSubPackets = Convert.ToInt32(Payload.Substring(offset, 11), 2);
+                    offset += 11;
+
+                    while (SubPackets.Count < numberOfSubPackets)
+                    {
+                        var subPacket = new Packet(Payload[offset..]);
+                        offset += subPacket.BitLength;
+
+                        SubPackets.Add(subPacket);
+                    }
+
+                    BitLength += 12 + SubPackets.Sum(packet => packet.BitLength);
+                }
             }
 
-            return headerVersions;
+            switch (TypeId)
+            {
+                case 0:
+                    Value = SubPackets.Sum(packet => packet.Value);
+                    break;
+                case 1:
+                    Value = SubPackets.Aggregate((long)1, (total, item) => total * item.Value);
+                    break;
+                case 2:
+                    Value = SubPackets.Min(packet => packet.Value);
+                    break;
+                case 3:
+                    Value = SubPackets.Max(packet => packet.Value);
+                    break;
+                case 4:
+                    Value = ParseLiteralValue(Payload.Substring(offset));
+                    break;
+                case 5:
+                    Value = SubPackets.First().Value > SubPackets.Skip(1).First().Value ? 1 : 0;
+                    break;
+                case 6:
+                    Value = SubPackets.First().Value < SubPackets.Skip(1).First().Value ? 1 : 0;
+                    break;
+                case 7:
+                    Value = SubPackets.First().Value == SubPackets.Skip(1).First().Value ? 1 : 0;
+                    break;
+                default:
+                    Value = 0;
+                    break;
+            }
         }
 
-        private int GetVersion()
+        public int GetVersionSum()
         {
-            return Version;
+            if (SubPackets.Count == 0)
+                return Version;
+
+            return Version + SubPackets.Sum(packet => packet.GetVersionSum());
         }
 
-        private string GetSubPackets()
+        public long Evaluate()
         {
-            return "";
+            switch (TypeId)
+            {
+                case 0:
+                    return SubPackets.Sum(packet => packet.Value);
+                case 1:
+                    return SubPackets.Aggregate((long)1, (total, item) => total * item.Value);
+                case 2:
+                    return SubPackets.Min(packet => packet.Value);
+                case 3:
+                    return SubPackets.Max(packet => packet.Value);
+                case 4:
+                    return Value;
+                case 5:
+                    return SubPackets.First().Value > SubPackets.Skip(1).First().Value ? 1 : 0;
+                case 6:
+                    return SubPackets.First().Value < SubPackets.Skip(1).First().Value ? 1 : 0;
+                case 7:
+                    return SubPackets.First().Value == SubPackets.Skip(1).First().Value ? 1 : 0;
+                default:
+                    return 0;
+            }
         }
 
-        private int ParseLiteralValue(string message)
+        private long ParseLiteralValue(string message)
         {
             var literalValue = "";
 
@@ -125,6 +199,8 @@ public static class AdventOfCode
             // last batch should return less than 5 if padded
             foreach (var number in message.Batch(5))
             {
+                BitLength += 5;
+
                 var binary = string.Join("", number);
 
                 literalValue += binary.Substring(1);
@@ -136,7 +212,7 @@ public static class AdventOfCode
                 }
             }
 
-            return Convert.ToInt32(literalValue, 2);
+            return Convert.ToInt64(literalValue, 2);
         }
     }
     #endregion
@@ -1286,9 +1362,32 @@ public static class AdventOfCode
 
     public static void Day16(string[] data)
     {
-        var packet = "110100101111111000101000";
+        var packet = data.First();
 
+        var map = new Dictionary<char, string> {
+                {'0' , "0000"},
+                {'1' , "0001"},
+                {'2' , "0010"},
+                {'3' , "0011"},
+                {'4' , "0100"},
+                {'5' , "0101"},
+                {'6' , "0110"},
+                {'7' , "0111"},
+                {'8' , "1000"},
+                {'9' , "1001"},
+                {'A' , "1010"},
+                {'B' , "1011"},
+                {'C' , "1100"},
+                {'D' , "1101"},
+                {'E' , "1110"},
+                {'F' , "1111"}
+            };
 
+        var binaryPacket = string.Join("", packet.Select(character => map[character]));
 
+        var decoder = new Packet(binaryPacket);
+
+        Console.WriteLine($"Part 1: \x1b[93m{decoder.GetVersionSum()}\x1b[0m");
+        Console.WriteLine($"Part 2: \x1b[93m{decoder.Evaluate()}\x1b[0m");
     }
 }
