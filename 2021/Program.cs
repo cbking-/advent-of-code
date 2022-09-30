@@ -190,16 +190,17 @@ public static class AdventOfCode
         }
     }
 
-    public class SnailNumber
+    [DebuggerDisplay("{Left} {Right}")]
+    public class Pair
     {
-        [DebuggerDisplay("{Depth} {Value}")]
-        public class Element
-        {
-            public int Value = 0;
-            public int Depth = 0;
-        }
+        public Pair? Parent {get; set;}
+        public dynamic? Left {get; set;}
+        public dynamic? Right {get; set;}
 
-        public List<Element> Elements = new List<Element>();
+        public override string ToString()
+        {
+            return $"[{Left},{Right}]";
+        }
     }
     #endregion
 
@@ -1478,126 +1479,59 @@ public static class AdventOfCode
 
     public static void Day18(string[] data)
     {
-        var snailfishNumbers = new List<SnailNumber>();
+        var homework = new List<Pair>();
 
         foreach (var line in data)
         {
-            var depth = 0;
-            var snailNumber = new SnailNumber();
+            var stack = new Stack<Pair>();
+            Pair snailfishNumber = new Pair();
 
             foreach (var character in line)
             {
                 switch (character)
                 {
                     case '[':
-                        depth += 1;
+                        snailfishNumber = new Pair();
+                        stack.Push(snailfishNumber);
                         break;
                     case ']':
-                        depth -= 1;
+                        snailfishNumber = stack.Pop();
+
+                        if(stack.Count > 0)
+                        {
+                            snailfishNumber.Parent = stack.Peek();
+
+                            if (snailfishNumber.Parent.Left is null)
+                                snailfishNumber.Parent.Left = snailfishNumber;
+                            else
+                                snailfishNumber.Parent.Right = snailfishNumber;
+
+                            snailfishNumber = snailfishNumber.Parent;
+                        }
                         break;
                     case ',':
                         continue;
                     default:
-                        snailNumber.Elements.Add(new SnailNumber.Element { Value = int.Parse(character.ToString()), Depth = depth });
+                        if(snailfishNumber.Left is null)
+                            snailfishNumber.Left = int.Parse(character.ToString());
+                        else
+                            snailfishNumber.Right = int.Parse(character.ToString());
                         break;
                 }
             }
 
-            //reverse because I traverse the list from the end later
-            // and the explode/split operations happen from the left first
-            // but the left needs to become the right for the later loop
-            snailNumber.Elements.Reverse();
-
-            snailfishNumbers.Add(snailNumber);
+            homework.Add(snailfishNumber);
         }
 
-        var firstRun = true;
+        homework.ForEach(line => Console.WriteLine(line.ToString()));
 
-        var final = snailfishNumbers.Aggregate(new SnailNumber(), (acc, number) =>
-        {
-            //add acc to elements so reverse order is preserved
-            number.Elements.AddRange(acc.Elements);
+        // I think adding trees together will be setting the first one as the left value and the second as the right
+        // of a new Pair object. It's 4 am on a shcool night and I should have been in bed a long time ago
 
-            acc.Elements = number.Elements;
-
-            if (!firstRun)
-                acc.Elements.ForEach(number => number.Depth += 1);
-
-            firstRun = false;
-
-            while (acc.Elements.Any(element => element.Depth >= 5) || acc.Elements.Any(element => element.Value >= 10))
-            {
-                while (acc.Elements.Any(element => element.Depth >= 5))
-                {
-                    for (var index = acc.Elements.Count - 1; index >= 0; index--)
-                    {
-                        var element = acc.Elements.ElementAt(index);
-
-                        if (element.Depth >= 5)
-                        {
-                            var neighbor = acc.Elements.ElementAtOrDefault(index - 1);
-                            var nextNumber = acc.Elements.ElementAtOrDefault(index + 1);
-                            var previousNumber = acc.Elements.ElementAtOrDefault(index - 2);
-
-                            if (neighbor != null && previousNumber != null)
-                            {
-                                //if the next number is deeper, we aren't in a pair yet
-                                if (previousNumber.Depth > element.Depth)
-                                    continue;
-
-                                previousNumber.Value += neighbor.Value;
-                            }
-
-                            if (nextNumber != null)
-                            {
-                                nextNumber.Value += element.Value;
-                            }
-
-                            acc.Elements.RemoveAt(index);
-
-                            neighbor.Value = 0;
-                            neighbor.Depth -= 1;
-
-                            index -= 1;
-
-                        }
-                    }
-                }
-
-                //now split any elements as long none need exploded
-                while (acc.Elements.Any(element => element.Value >= 10) && !acc.Elements.Any(element => element.Depth >= 5))
-                {
-                    for (var index = acc.Elements.Count - 1; index >= 0; index--)
-                    {
-                        var element = acc.Elements.ElementAt(index);
-
-                        if (element.Value >= 10)
-                        {
-                            var leftNumber = (int)Math.Ceiling(element.Value / 2.0);
-                            var rightNumber = (int)Math.Floor(element.Value / 2.0);
-
-                            element.Value = rightNumber;
-                            element.Depth += 1;
-
-                            acc.Elements.Insert(index, new SnailNumber.Element { Value = leftNumber, Depth = element.Depth });
-
-                            if (element.Depth >= 5)
-                                break;
-                        }
-                    }
-                }
+        //probably gonna use breadth first search for finding pairs in the tree to explode and split to
 
 
-            }
 
-            acc.Elements.Reverse();
-            Console.WriteLine("Result: " + string.Join(',', acc.Elements.Select(element => element.Value)));
-            acc.Elements.Reverse();
-            return acc;
-        });
-
-        final.Elements.Reverse();
-        Console.WriteLine("Result: " + string.Join(',', final.Elements.Select(element => element.Value)));
 
     }
 }
