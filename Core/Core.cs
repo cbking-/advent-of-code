@@ -47,11 +47,14 @@ public static class Helpers
     ///<summary>
     /// Gets the next value or, if at the end of the list, gets the first value.
     ///</summary>
-    public static T? GetNext<T>(IEnumerable<T> list, T current)
+    public static T? GetNext<T>(IEnumerable<T> list, T current, bool wrap = true)
     {
         try
         {
-            return list.SkipWhile(x => x != null && !x.Equals(current)).Skip(1).FirstOrDefault() ?? list.First();
+            if(wrap)
+                return list.SkipWhile(x => x != null && !x.Equals(current)).Skip(1).FirstOrDefault() ?? list.First();
+            else
+                return list.SkipWhile(x => x != null && !x.Equals(current)).Skip(1).FirstOrDefault();
         }
         catch
         {
@@ -63,11 +66,14 @@ public static class Helpers
     ///<summary>
     /// Gets the previous value or, if at the beginning of the list, gets the last value.
     ///</summary>
-    public static T? GetPrevious<T>(IEnumerable<T> list, T current)
+    public static T? GetPrevious<T>(IEnumerable<T> list, T current, bool wrap = true)
     {
         try
         {
-            return list.TakeWhile(x => x != null && !x.Equals(current)).LastOrDefault() ?? list.Last();
+            if(wrap)
+                return list.TakeWhile(x => x != null && !x.Equals(current)).LastOrDefault() ?? list.Last();
+            else
+                return list.TakeWhile(x => x != null && !x.Equals(current)).LastOrDefault();
         }
         catch
         {

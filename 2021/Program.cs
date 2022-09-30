@@ -189,8 +189,21 @@ public static class AdventOfCode
             return Convert.ToInt64(literalValue, 2);
         }
     }
+
+    public class SnailNumber
+    {
+        [DebuggerDisplay("{Depth} {Value}")]
+        public class Element
+        {
+            public int Value = 0;
+            public int Depth = 0;
+        }
+
+        public List<Element> Elements = new List<Element>();
+    }
     #endregion
 
+    #region Completed
     public static void Day1(string[] data)
     {
         var numbers = Array.ConvertAll(data, line => int.Parse(line));
@@ -1381,25 +1394,25 @@ public static class AdventOfCode
         //took me a minute to realize the velocities were changing like traingle numbers
         // but once I did the calculations became easy
 
-        for(int i = 1; i <= targetAreaX[1] ; i++)
+        for (int i = 1; i <= targetAreaX[1]; i++)
         {
             int triangleNumber = (i * (i + 1)) / 2;
 
-            if(triangleNumber >= targetAreaX[0] && triangleNumber <= targetAreaX[1])
+            if (triangleNumber >= targetAreaX[0] && triangleNumber <= targetAreaX[1])
             {
                 minX = i;
                 break;
             }
 
-            if(triangleNumber > targetAreaX[1])
+            if (triangleNumber > targetAreaX[1])
                 break;
         }
 
-        for (int i = 1; i <= -targetAreaY[0] ; i++)
+        for (int i = 1; i <= -targetAreaY[0]; i++)
         {
             int triangleNumber = (i * (i + 1)) / 2;
 
-            for(int j = 1; ; j++)
+            for (int j = 1; ; j++)
             {
                 int negativeTriangleNumber = ((j * (j + 1)) / 2) * -1;
 
@@ -1408,7 +1421,7 @@ public static class AdventOfCode
 
                 if (difference >= targetAreaY[0] && difference <= targetAreaY[1])
                 {
-                    if(triangleNumber >= maxY)
+                    if (triangleNumber >= maxY)
                     {
                         maxY = i;
                         maxHeight = triangleNumber;
@@ -1428,9 +1441,9 @@ public static class AdventOfCode
 
         //I wonder if there's a more clever way to do this than running simulations for each combination of
         // velocities
-        foreach(var x in Enumerable.Range(minX, targetAreaX[1] - minX + 1))
+        foreach (var x in Enumerable.Range(minX, targetAreaX[1] - minX + 1))
         {
-            foreach(var y in Enumerable.Range(targetAreaY[0], maxY - targetAreaY[0]+ 1))
+            foreach (var y in Enumerable.Range(targetAreaY[0], maxY - targetAreaY[0] + 1))
             {
                 var iterationX = x;
                 var iterationY = y;
@@ -1451,7 +1464,7 @@ public static class AdventOfCode
 
                     if ((probePos[0] >= targetAreaX[0] && probePos[0] <= targetAreaX[1])
                      && (probePos[1] >= targetAreaY[0] && probePos[1] <= targetAreaY[1]))
-                     {
+                    {
                         possibleVelocities++;
                         break;
                     }
@@ -1460,5 +1473,131 @@ public static class AdventOfCode
         }
 
         Console.WriteLine(possibleVelocities);
+    }
+    #endregion
+
+    public static void Day18(string[] data)
+    {
+        var snailfishNumbers = new List<SnailNumber>();
+
+        foreach (var line in data)
+        {
+            var depth = 0;
+            var snailNumber = new SnailNumber();
+
+            foreach (var character in line)
+            {
+                switch (character)
+                {
+                    case '[':
+                        depth += 1;
+                        break;
+                    case ']':
+                        depth -= 1;
+                        break;
+                    case ',':
+                        continue;
+                    default:
+                        snailNumber.Elements.Add(new SnailNumber.Element { Value = int.Parse(character.ToString()), Depth = depth });
+                        break;
+                }
+            }
+
+            //reverse because I traverse the list from the end later
+            // and the explode/split operations happen from the left first
+            // but the left needs to become the right for the later loop
+            snailNumber.Elements.Reverse();
+
+            snailfishNumbers.Add(snailNumber);
+        }
+
+        var firstRun = true;
+
+        var final = snailfishNumbers.Aggregate(new SnailNumber(), (acc, number) =>
+        {
+            //add acc to elements so reverse order is preserved
+            number.Elements.AddRange(acc.Elements);
+
+            acc.Elements = number.Elements;
+
+            if (!firstRun)
+                acc.Elements.ForEach(number => number.Depth += 1);
+
+            firstRun = false;
+
+            while (acc.Elements.Any(element => element.Depth >= 5) || acc.Elements.Any(element => element.Value >= 10))
+            {
+                while (acc.Elements.Any(element => element.Depth >= 5))
+                {
+                    for (var index = acc.Elements.Count - 1; index >= 0; index--)
+                    {
+                        var element = acc.Elements.ElementAt(index);
+
+                        if (element.Depth >= 5)
+                        {
+                            var neighbor = acc.Elements.ElementAtOrDefault(index - 1);
+                            var nextNumber = acc.Elements.ElementAtOrDefault(index + 1);
+                            var previousNumber = acc.Elements.ElementAtOrDefault(index - 2);
+
+                            if (neighbor != null && previousNumber != null)
+                            {
+                                //if the next number is deeper, we aren't in a pair yet
+                                if (previousNumber.Depth > element.Depth)
+                                    continue;
+
+                                previousNumber.Value += neighbor.Value;
+                            }
+
+                            if (nextNumber != null)
+                            {
+                                nextNumber.Value += element.Value;
+                            }
+
+                            acc.Elements.RemoveAt(index);
+
+                            neighbor.Value = 0;
+                            neighbor.Depth -= 1;
+
+                            index -= 1;
+
+                        }
+                    }
+                }
+
+                //now split any elements as long none need exploded
+                while (acc.Elements.Any(element => element.Value >= 10) && !acc.Elements.Any(element => element.Depth >= 5))
+                {
+                    for (var index = acc.Elements.Count - 1; index >= 0; index--)
+                    {
+                        var element = acc.Elements.ElementAt(index);
+
+                        if (element.Value >= 10)
+                        {
+                            var leftNumber = (int)Math.Ceiling(element.Value / 2.0);
+                            var rightNumber = (int)Math.Floor(element.Value / 2.0);
+
+                            element.Value = rightNumber;
+                            element.Depth += 1;
+
+                            acc.Elements.Insert(index, new SnailNumber.Element { Value = leftNumber, Depth = element.Depth });
+
+                            if (element.Depth >= 5)
+                                break;
+                        }
+                    }
+                }
+
+
+            }
+
+            acc.Elements.Reverse();
+            Console.WriteLine("Result: " + string.Join(',', acc.Elements.Select(element => element.Value)));
+            acc.Elements.Reverse();
+            return acc;
+        });
+
+        final.Elements.Reverse();
+        Console.WriteLine("Result: " + string.Join(',', final.Elements.Select(element => element.Value)));
+
     }
 }
