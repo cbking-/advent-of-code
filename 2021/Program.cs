@@ -193,9 +193,9 @@ public static class AdventOfCode
     [DebuggerDisplay("{Left} {Right}")]
     public class Pair
     {
-        public Pair? Parent {get; set;}
-        public dynamic? Left {get; set;}
-        public dynamic? Right {get; set;}
+        public Pair? Parent { get; set; }
+        public dynamic? Left { get; set; }
+        public dynamic? Right { get; set; }
 
         public override string ToString()
         {
@@ -1497,7 +1497,7 @@ public static class AdventOfCode
                     case ']':
                         snailfishNumber = stack.Pop();
 
-                        if(stack.Count > 0)
+                        if (stack.Count > 0)
                         {
                             snailfishNumber.Parent = stack.Peek();
 
@@ -1512,7 +1512,7 @@ public static class AdventOfCode
                     case ',':
                         continue;
                     default:
-                        if(snailfishNumber.Left is null)
+                        if (snailfishNumber.Left is null)
                             snailfishNumber.Left = int.Parse(character.ToString());
                         else
                             snailfishNumber.Right = int.Parse(character.ToString());
@@ -1523,15 +1523,223 @@ public static class AdventOfCode
             homework.Add(snailfishNumber);
         }
 
-        homework.ForEach(line => Console.WriteLine(line.ToString()));
+        //skipping the first one since we are going to use it as the seed for the aggregate function
+        var answer = homework.Skip(1).Aggregate(homework.First(), (acc, number) =>
+        {
+            var newTree = new Pair { Left = acc, Right = number };
 
-        // I think adding trees together will be setting the first one as the left value and the second as the right
-        // of a new Pair object. It's 4 am on a shcool night and I should have been in bed a long time ago
+            newTree.Left.Parent = newTree;
+            newTree.Right.Parent = newTree;
 
-        //probably gonna use breadth first search for finding pairs in the tree to explode and split to
+            //all number are normalized when adding
+            // a split won't take a number above 5
+            Func<Pair, Pair> FindPairToExplode = (Pair pair) => new Pair();
 
+            FindPairToExplode = (Pair pair) =>
+            {
+                var queue = new Queue<Pair>();
+                queue.Enqueue(pair);
+                Pair node = null;
+                var depth = 0;
 
+                while(queue.Count > 0)
+                {
+                    var size = queue.Count;
 
+                    for(int i = 0; i < size; i++){
+                        node = queue.Dequeue();
+                        if (node.Right is Pair)
+                            queue.Enqueue(node.Right);
+                        if (node.Left is Pair)
+                            queue.Enqueue(node.Left);
+                    }
 
+                    depth += 1;
+                }
+
+                if(depth < 5)
+                    return null;
+
+                return node;
+            };
+
+            Func<Pair, Pair> FindPairToSplit = (Pair pair) => new Pair();
+
+            FindPairToSplit = (Pair pair) =>
+            {
+                var stack = new Stack<Pair>();
+                stack.Push(pair);
+                Pair node = null;
+
+                while (stack.Count > 0)
+                {
+                    node = stack.Pop();
+
+                    //This stops at the first value greater than 10 rather than the deepest
+                    // E.G. [[9,10],20] will find 20 before 10
+                    // and it should find 10 first
+
+                    if (node.Left is int && node.Left >= 10)
+                        return node;
+
+                    if (node.Right is int && node.Right >= 10)
+                        return node;
+
+                    if (node.Left is Pair)
+                        stack.Push(node.Right);
+
+                    if (node.Right is Pair)
+                        stack.Push(node.Left);
+                }
+
+                return null;
+            };
+
+            while (true)
+            {
+                var pairToExplode = FindPairToExplode(newTree);
+
+                while (pairToExplode is not null)
+                {
+                    var AddLeftNeighbor = (Pair pair) =>
+                    {
+                        if (pair is null)
+                            return;
+
+                        var valueToAdd = pair.Left;
+
+                        while (pair.Parent is not null)
+                        {
+                            if (pair.Parent.Left is int)
+                            {
+                                pair.Parent.Left += valueToAdd;
+                                break;
+                            }
+
+                            if (pair.Parent.Left != pair)
+                            {
+                                if (pair.Parent.Left is Pair)
+                                {
+                                    pair = pair.Parent.Left;
+
+                                    while (pair.Right is Pair)
+                                    {
+                                        pair = pair.Right;
+                                    }
+
+                                    pair.Right += valueToAdd;
+                                    break;
+                                }
+                                else
+                                {
+                                    pair.Parent.Left += valueToAdd;
+                                    break;
+                                }
+                            }
+
+                            pair = pair.Parent;
+                        }
+                    };
+
+                    AddLeftNeighbor(pairToExplode);
+
+                    var AddRightNeighbor = (Pair pair) =>
+                    {
+                        if (pair is null)
+                            return;
+
+                        var valueToAdd = pair.Right;
+
+                        while (pair.Parent is not null)
+                        {
+                            if (pair.Parent.Right is int)
+                            {
+                                pair.Parent.Right += valueToAdd;
+                                break;
+                            }
+
+                            if (pair.Parent.Right != pair)
+                            {
+                                if (pair.Parent.Right is Pair)
+                                {
+                                    pair = pair.Parent.Right;
+
+                                    while (pair.Left is Pair)
+                                    {
+                                        pair = pair.Left;
+                                    }
+
+                                    pair.Left += valueToAdd;
+                                    break;
+                                }
+                                else
+                                {
+                                    pair.Parent.Right += valueToAdd;
+                                    break;
+                                }
+                            }
+
+                            pair = pair.Parent;
+                        }
+                    };
+
+                    AddRightNeighbor(pairToExplode);
+
+                    if (pairToExplode.Parent.Left is Pair && pairToExplode == pairToExplode.Parent.Left)
+                    {
+                        pairToExplode.Parent.Left = 0;
+                    }
+                    else
+                        pairToExplode.Parent.Right = 0;
+
+                    Console.WriteLine($"exploded: {newTree}");
+
+                    pairToExplode = FindPairToExplode(newTree);
+                }
+
+                var pairToSplit = FindPairToSplit(newTree);
+
+                while (pairToSplit is not null)
+                {
+                    if (pairToSplit.Left is int valueToSplit && valueToSplit >= 10)
+                    {
+                        var leftNumber = (int)Math.Floor(valueToSplit / 2.0);
+                        var rightNumber = (int)Math.Ceiling(valueToSplit / 2.0);
+
+                        pairToSplit.Left = new Pair() { Left = leftNumber,
+                                                         Right = rightNumber,
+                                                         Parent = pairToSplit };
+                    }
+                    else
+                    {
+                        valueToSplit = pairToSplit.Right;
+
+                        var leftNumber = (int)Math.Floor(valueToSplit / 2.0);
+                        var rightNumber = (int)Math.Ceiling(valueToSplit / 2.0);
+
+                        pairToSplit.Right = new Pair() { Left = leftNumber,
+                                                        Right = rightNumber,
+                                                        Parent = pairToSplit };
+                    }
+
+                    Console.WriteLine($"splitted: {newTree}");
+                    pairToExplode = FindPairToExplode(newTree);
+
+                    //need to exit if we've created an explodable pair
+                    if (pairToExplode is not null)
+                        break;
+
+                    pairToSplit = FindPairToSplit(newTree);
+                }
+
+                if (pairToExplode is null && pairToSplit is null)
+                    break;
+            }
+
+            Console.WriteLine(newTree);
+            return newTree;
+        });
+
+        Console.WriteLine(answer.ToString() == "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
     }
 }
