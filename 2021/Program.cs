@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using Combinatorics.Collections;
 using Core;
 using MathNet.Numerics.Statistics;
 using static Core.Helpers;
@@ -197,10 +198,29 @@ public static class AdventOfCode
         public dynamic? Left { get; set; }
         public dynamic? Right { get; set; }
 
+        public int Magnitude()
+        {
+            var leftMagnitude = 0;
+            var rightMagnitude = 0;
+
+            if (Left is Pair)
+                leftMagnitude += Left.Magnitude() * 3;
+            else
+                leftMagnitude += Left * 3;
+
+            if (Right is Pair)
+                rightMagnitude += Right.Magnitude() * 2;
+            else
+                rightMagnitude += Right * 2;
+
+            return leftMagnitude + rightMagnitude;
+        }
+
         public override string ToString()
         {
             return $"[{Left},{Right}]";
         }
+
     }
     #endregion
 
@@ -1479,57 +1499,75 @@ public static class AdventOfCode
 
     public static void Day18(string[] data)
     {
-        var homework = new List<Pair>();
+        /*
+            This is kind of ugly but it runs fast (on my computer lul) and gets the right
+            answers. Haven't looked at other solutions yet but I'm sure there's some more
+            elegant string parsing do be done and better binary tree solutions than what
+            I managed to cobble together here. The Combinatorics package helped a lot
+            for part 2. It's nice that I picked that up when doing 2015.
+        */
 
-        foreach (var line in data)
+        Func<IEnumerable<string>, List<Pair>> ParseData = (IEnumerable<string> input) =>
         {
-            var stack = new Stack<Pair>();
-            Pair snailfishNumber = new Pair();
+            var output = new List<Pair>();
 
-            foreach (var character in line)
+            foreach (var line in input)
             {
-                switch (character)
+                var stack = new Stack<Pair>();
+                Pair snailfishNumber = new Pair();
+
+                foreach (var character in line)
                 {
-                    case '[':
-                        snailfishNumber = new Pair();
-                        stack.Push(snailfishNumber);
-                        break;
-                    case ']':
-                        snailfishNumber = stack.Pop();
+                    switch (character)
+                    {
+                        case '[':
+                            snailfishNumber = new Pair();
+                            stack.Push(snailfishNumber);
+                            break;
+                        case ']':
+                            snailfishNumber = stack.Pop();
 
-                        if (stack.Count > 0)
-                        {
-                            snailfishNumber.Parent = stack.Peek();
+                            if (stack.Count > 0)
+                            {
+                                snailfishNumber.Parent = stack.Peek();
 
-                            if (snailfishNumber.Parent.Left is null)
-                                snailfishNumber.Parent.Left = snailfishNumber;
+                                if (snailfishNumber.Parent.Left is null)
+                                    snailfishNumber.Parent.Left = snailfishNumber;
+                                else
+                                    snailfishNumber.Parent.Right = snailfishNumber;
+
+                                snailfishNumber = snailfishNumber.Parent;
+                            }
+                            break;
+                        case ',':
+                            continue;
+                        default:
+                            if (snailfishNumber.Left is null)
+                                snailfishNumber.Left = int.Parse(character.ToString());
                             else
-                                snailfishNumber.Parent.Right = snailfishNumber;
-
-                            snailfishNumber = snailfishNumber.Parent;
-                        }
-                        break;
-                    case ',':
-                        continue;
-                    default:
-                        if (snailfishNumber.Left is null)
-                            snailfishNumber.Left = int.Parse(character.ToString());
-                        else
-                            snailfishNumber.Right = int.Parse(character.ToString());
-                        break;
+                                snailfishNumber.Right = int.Parse(character.ToString());
+                            break;
+                    }
                 }
+
+                output.Add(snailfishNumber);
             }
 
-            homework.Add(snailfishNumber);
-        }
+            return output;
+        };
 
-        //skipping the first one since we are going to use it as the seed for the aggregate function
-        var answer = homework.Skip(1).Aggregate(homework.First(), (acc, number) =>
+        Func<List<Pair>, int> Solve = (List<Pair> ToSolve) =>
         {
+            var answer = ToSolve.Skip(1).Aggregate(ToSolve.First(), (acc, number) =>
+        {
+            // Console.WriteLine("  " + acc);
+            // Console.WriteLine($"+ {number}");
+
             var newTree = new Pair { Left = acc, Right = number };
 
             newTree.Left.Parent = newTree;
             newTree.Right.Parent = newTree;
+
 
             //all number are normalized when adding
             // a split won't take a number above 5
@@ -1542,11 +1580,12 @@ public static class AdventOfCode
                 Pair node = null;
                 var depth = 0;
 
-                while(queue.Count > 0)
+                while (queue.Count > 0)
                 {
                     var size = queue.Count;
 
-                    for(int i = 0; i < size; i++){
+                    for (int i = 0; i < size; i++)
+                    {
                         node = queue.Dequeue();
                         if (node.Right is Pair)
                             queue.Enqueue(node.Right);
@@ -1557,7 +1596,7 @@ public static class AdventOfCode
                     depth += 1;
                 }
 
-                if(depth < 5)
+                if (depth < 5)
                     return null;
 
                 return node;
@@ -1575,20 +1614,29 @@ public static class AdventOfCode
                 {
                     node = stack.Pop();
 
-                    //This stops at the first value greater than 10 rather than the deepest
-                    // E.G. [[9,10],20] will find 20 before 10
-                    // and it should find 10 first
-
                     if (node.Left is int && node.Left >= 10)
                         return node;
 
-                    if (node.Right is int && node.Right >= 10)
-                        return node;
+                    if ((node.Right is int && node.Right >= 10))
+                    {
+                        // [[9,10],20] will find 20
+                        // [[14,0],25] will find 25
+                        // without this
+                        if (node.Left is Pair)
+                        {
+                            var leftNode = FindPairToSplit(node.Left);
 
-                    if (node.Left is Pair)
-                        stack.Push(node.Right);
+                            if (leftNode is not null)
+                                return leftNode;
+                        }
+
+                        return node;
+                    }
 
                     if (node.Right is Pair)
+                        stack.Push(node.Right);
+
+                    if (node.Left is Pair)
                         stack.Push(node.Left);
                 }
 
@@ -1692,7 +1740,7 @@ public static class AdventOfCode
                     else
                         pairToExplode.Parent.Right = 0;
 
-                    Console.WriteLine($"exploded: {newTree}");
+                    //Console.WriteLine($"exploded:{newTree}");
 
                     pairToExplode = FindPairToExplode(newTree);
                 }
@@ -1706,9 +1754,12 @@ public static class AdventOfCode
                         var leftNumber = (int)Math.Floor(valueToSplit / 2.0);
                         var rightNumber = (int)Math.Ceiling(valueToSplit / 2.0);
 
-                        pairToSplit.Left = new Pair() { Left = leftNumber,
-                                                         Right = rightNumber,
-                                                         Parent = pairToSplit };
+                        pairToSplit.Left = new Pair()
+                        {
+                            Left = leftNumber,
+                            Right = rightNumber,
+                            Parent = pairToSplit
+                        };
                     }
                     else
                     {
@@ -1717,12 +1768,15 @@ public static class AdventOfCode
                         var leftNumber = (int)Math.Floor(valueToSplit / 2.0);
                         var rightNumber = (int)Math.Ceiling(valueToSplit / 2.0);
 
-                        pairToSplit.Right = new Pair() { Left = leftNumber,
-                                                        Right = rightNumber,
-                                                        Parent = pairToSplit };
+                        pairToSplit.Right = new Pair()
+                        {
+                            Left = leftNumber,
+                            Right = rightNumber,
+                            Parent = pairToSplit
+                        };
                     }
 
-                    Console.WriteLine($"splitted: {newTree}");
+                    //Console.WriteLine($"splitted:{newTree}");
                     pairToExplode = FindPairToExplode(newTree);
 
                     //need to exit if we've created an explodable pair
@@ -1736,10 +1790,25 @@ public static class AdventOfCode
                     break;
             }
 
-            Console.WriteLine(newTree);
+            // Console.WriteLine($"= {newTree}\n");
             return newTree;
         });
 
-        Console.WriteLine(answer.ToString() == "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
+            return answer.Magnitude();
+        };
+
+        Console.WriteLine(Solve(ParseData(data)));
+
+        var combos = new Combinations<string>(data, 2);
+        var maxMagnitude = 0;
+
+        foreach(var combo in combos)
+        {
+            var magnitude = Solve(ParseData(combo));
+
+            maxMagnitude = magnitude > maxMagnitude ? magnitude : maxMagnitude;
+        }
+
+        Console.WriteLine(maxMagnitude);
     }
 }
