@@ -9,11 +9,11 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/2021/bin/Debug/net6.0/AdventOfCode2021.dll",
+            "program": "${workspaceFolder}/2022/bin/Debug/net6.0/AdventOfCode2022.dll",
             "args": [
-                "Day18"
+                "Day1"
             ],
-            "cwd": "${workspaceFolder}/2021",
+            "cwd": "${workspaceFolder}/2022",
             "console": "internalConsole",
             "stopAtEntry": false
         },

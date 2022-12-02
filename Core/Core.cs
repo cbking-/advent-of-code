@@ -3,10 +3,14 @@
 namespace Core;
 public static class Helpers
 {
-    public static async Task<string[]> LoadDataAsync(string day)
+    public static async Task<string[]> LoadDataAsync(string day, bool keepNewLines = false)
     {
         using var file = new StreamReader($"inputs{Path.DirectorySeparatorChar}{day}.txt");
         var data = await file.ReadToEndAsync();
+
+        if(keepNewLines)
+            return data.Split(Environment.NewLine);
+
         return data.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
     }
 
