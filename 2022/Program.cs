@@ -14,12 +14,14 @@ public class AdventOfCode
 {
     public static void Day1(string[] data)
     {
-        var elves = data.Aggregate(new List<List<int>>{new List<int>()}, (acc, line) =>
+        var elves = data.Aggregate(new List<List<int>> { new List<int>() }, (acc, line) =>
         {
-            if(string.IsNullOrWhiteSpace(line)) {
+            if (string.IsNullOrWhiteSpace(line))
+            {
                 acc.Add(new List<int>());
             }
-            else{
+            else
+            {
                 acc.Last().Add(int.Parse(line));
             }
 
@@ -64,7 +66,7 @@ public class AdventOfCode
             var me = match.Last().ToCharArray().First().ToString();
 
             var score = 0;
-            switch(me)
+            switch (me)
             {
                 case WIN:
                     score = states.Where(state => state.Key.StartsWith(elf))
@@ -89,4 +91,40 @@ public class AdventOfCode
         Console.WriteLine(scorePart2);
     }
 
+    public static void Day3(string[] data)
+    {
+        var prioritySum = data.Aggregate(0, (acc, line) =>
+        {
+            var compartmentOne = line.Take(line.Length / 2);
+            var compartmentTwo = line.Skip(line.Length / 2);
+
+            var commonItem = compartmentOne.Intersect(compartmentTwo);
+
+            var priority = (int)(char)commonItem.Single();
+
+            if (priority >= 97 && priority <= 122)
+                priority = priority - 96;
+            else
+                priority = priority - 38;
+
+            return acc + priority;
+        });
+
+        var badgeSum = data.Batch(3).Aggregate(0, (acc, group) =>
+        {
+            var priority = (int)group.Skip(1).Aggregate(group.First(), (previous, current) =>
+                string.Concat(previous.Intersect(current))
+            ).Single();
+
+            if (priority >= 97 && priority <= 122)
+                priority = priority - 96;
+            else
+                priority = priority - 38;
+
+            return acc + priority;
+        });
+
+        Console.WriteLine(prioritySum);
+        Console.WriteLine(badgeSum);
+    }
 }
