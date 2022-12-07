@@ -133,19 +133,20 @@ public class AdventOfCode
 
     public static void Day4(string[] data)
     {
-        var overlapping = data.Aggregate(new int[]{0, 0}, (acc, line) =>{
+        var overlapping = data.Aggregate(new int[] { 0, 0 }, (acc, line) =>
+        {
             var elfOne = line.Split(',').First().Split('-').Select(Int32.Parse);
             var elfTwo = line.Split(',').Last().Split('-').Select(Int32.Parse);
 
             //completely overlapping
             if ((elfOne.First() <= elfTwo.First() && elfOne.Last() >= elfTwo.Last())
              || (elfTwo.First() <= elfOne.First() && elfTwo.Last() >= elfOne.Last()))
-                 acc[0] += 1;
+                acc[0] += 1;
 
             //partially overlapping (is the end of one in the other's range)
             if ((elfOne.Last() >= elfTwo.First() && elfOne.Last() <= elfTwo.Last())
              || (elfTwo.Last() >= elfOne.First() && elfTwo.Last() <= elfOne.Last()))
-                 acc[1] += 1;
+                acc[1] += 1;
 
             return acc;
         });
@@ -191,7 +192,7 @@ public class AdventOfCode
                 .ToList()
                 .ForEach(crate =>
                 {
-                    if(crate.Item != ' ')
+                    if (crate.Item != ' ')
                     {
                         stacks[crate.Index / 4].Push(crate.Item);
                         betterStacks[crate.Index / 4].Push(crate.Item);
@@ -199,7 +200,8 @@ public class AdventOfCode
                 });
         });
 
-        splitData.Last().ToList().ForEach(move => {
+        splitData.Last().ToList().ForEach(move =>
+        {
             var movePattern = new Regex(@"move (\d+) from (\d+) to (\d+)");
             var moveData = movePattern.Matches(move);
 
@@ -207,7 +209,7 @@ public class AdventOfCode
             var fromStack = int.Parse(moveData.Single().Groups[2].Value);
             var toStack = int.Parse(moveData.Single().Groups[3].Value);
 
-            foreach(var index in Enumerable.Range(0, numberOfCrates))
+            foreach (var index in Enumerable.Range(0, numberOfCrates))
             {
                 stacks[toStack - 1].Push(stacks[fromStack - 1].Pop());
             }
@@ -227,7 +229,8 @@ public class AdventOfCode
 
         StringBuilder builder = new();
 
-        foreach(var stack in stacks){
+        foreach (var stack in stacks)
+        {
             builder.Append(stack.Pop());
         }
 
@@ -241,5 +244,28 @@ public class AdventOfCode
         }
 
         Console.WriteLine(builder.ToString());
+    }
+
+    public static void Day6(string[] data)
+    {
+        var line = data.First();
+
+        for (var n = 0; n < line.Length; n++)
+        {
+            if (line.Skip(n).Take(4).Distinct().Count() == 4)
+            {
+                Console.WriteLine(n + 4);
+                break;
+            }
+        }
+
+        for (var n = 0; n < line.Length; n++)
+        {
+            if (line.Skip(n).Take(14).Distinct().Count() == 14)
+            {
+                Console.WriteLine(n + 14);
+                break;
+            }
+        }
     }
 }
