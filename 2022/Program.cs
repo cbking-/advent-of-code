@@ -298,7 +298,7 @@ public class AdventOfCode
 
     public static void Day7(string[] data)
     {
-        List<string> path = new();
+        Stack<string> path = new();
         List<ElfDirectory> fileSystem = new();
         ElfDirectory currentDir = new();
 
@@ -315,11 +315,11 @@ public class AdventOfCode
                 {
                     if (argument == "..")
                     {
-                        path.RemoveAt(path.Count - 1);
+                        path.Pop();
                     }
                     else
                     {
-                        path.Add(argument ?? "");
+                        path.Push(argument ?? "");
 
                         currentDir = new ElfDirectory
                         {
@@ -355,14 +355,14 @@ public class AdventOfCode
                         currentDir.Directories = new();
 
                     //add to the path temporarily
-                    path.Add(tokens.Last());
+                    path.Push(tokens.Last());
 
                     var newDir = new ElfDirectory
                     {
                         Name = string.Join('/', path)
                     };
 
-                    path.RemoveAt(path.Count - 1);
+                    path.Pop();
 
                     fileSystem.Add(newDir);
                     currentDir.Directories.Add(newDir);
