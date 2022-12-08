@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,6 +16,32 @@ dayToRun.Invoke(null, new object[] { data });
 
 public class AdventOfCode
 {
+    [DebuggerDisplay("{Name}: {Size}")]
+    private class ElfDirectory
+    {
+        public string Name = string.Empty;
+
+        public List<ElfFile> Files = new();
+
+        public List<ElfDirectory>? Directories;
+
+        public int Size = 0;
+
+        public int GetSize()
+        {
+            if (Size == 0)
+                Size = (Directories?.Sum(directory => directory.GetSize()) ?? 0) + Files.Sum(file => file.Size);
+
+            return Size;
+        }
+    }
+
+    private class ElfFile
+    {
+        public string Name = string.Empty;
+        public int Size = 0;
+    }
+
     public static void Day1(string[] data)
     {
         var elves = data.Aggregate(new List<List<int>> { new List<int>() }, (acc, line) =>
@@ -267,5 +294,100 @@ public class AdventOfCode
                 break;
             }
         }
+    }
+
+    public static void Day7(string[] data)
+    {
+        List<string> path = new();
+        List<ElfDirectory> fileSystem = new();
+        ElfDirectory currentDir = new();
+
+        foreach (var line in data)
+        {
+            var tokens = line.Split(' ');
+
+            if (tokens.First() == "$")
+            {
+                var command = tokens.Skip(1).First();
+                var argument = tokens.Skip(2).FirstOrDefault();
+
+                if (command == "cd")
+                {
+                    if (argument == "..")
+                    {
+                        path.RemoveAt(path.Count - 1);
+                    }
+                    else
+                    {
+                        path.Add(argument ?? "");
+
+                        currentDir = new ElfDirectory
+                        {
+                            Name = string.Join('/', path)
+                        };
+                    }
+                }
+                else
+                {
+                    //theres no processing for ls commands
+                    continue;
+                }
+            }
+            else
+            {
+                //Taking advantage of object references
+                var existingDir = fileSystem.Find(dir => dir.Name == currentDir.Name);
+
+                if (existingDir is not null)
+                {
+                    //The directory was found in a previous command
+                    // and we are populating that directory now
+                    currentDir = existingDir;
+                }
+                else
+                {
+                    fileSystem.Add(currentDir);
+                }
+
+                if (tokens.First() == "dir")
+                {
+                    if (currentDir.Directories is null)
+                        currentDir.Directories = new();
+
+                    //add to the path temporarily
+                    path.Add(tokens.Last());
+
+                    var newDir = new ElfDirectory
+                    {
+                        Name = string.Join('/', path)
+                    };
+
+                    path.RemoveAt(path.Count - 1);
+
+                    fileSystem.Add(newDir);
+                    currentDir.Directories.Add(newDir);
+                }
+                else
+                {
+                    currentDir.Files.Add(new ElfFile
+                    {
+                        Name = tokens.Last(),
+                        Size = int.Parse(tokens.First())
+                    });
+                }
+            }
+        }
+
+        var sum = fileSystem.Where(dir => dir.GetSize() <= 100000)
+                            .Sum(dir => dir.Size);
+
+        Console.WriteLine(sum);
+
+        var freeSpace = 70000000 - fileSystem.First().GetSize();
+        var spaceToClear = 30000000 - freeSpace;
+
+        var dirToDelete = fileSystem.Where(dir => dir.Size >= spaceToClear).Min(dir => dir.Size);
+
+        Console.WriteLine(dirToDelete);
     }
 }
