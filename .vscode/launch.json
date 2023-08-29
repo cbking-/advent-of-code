@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/2022/bin/Debug/net6.0/AdventOfCode2022.dll",
             "args": [
-                "Day11"
+                "Day12"
             ],
             "cwd": "${workspaceFolder}/2022",
             "console": "internalConsole",
