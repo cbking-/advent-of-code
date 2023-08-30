@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Collections;
 
 var data = await LoadDataAsync(args[0]);
 
@@ -15,7 +16,7 @@ public static class AdventOfCode
     {
         string[] input = data[0].Split(',', StringSplitOptions.TrimEntries);
         int currentDirectionIndex = 0;
-        char[] directions = {'n', 'e', 's', 'w'};
+        char[] directions = { 'n', 'e', 's', 'w' };
         Dictionary<char, int> accumulator = new()
         {
             {'n', 0},
@@ -24,19 +25,23 @@ public static class AdventOfCode
             {'w', 0}
         };
 
-        foreach(string instruction in input)
+        foreach (string instruction in input)
         {
-            if(instruction.StartsWith('L')){
+            if (instruction.StartsWith('L'))
+            {
                 currentDirectionIndex--;
             }
-            else{
+            else
+            {
                 currentDirectionIndex++;
             }
 
-            if(currentDirectionIndex == 4){
+            if (currentDirectionIndex == 4)
+            {
                 currentDirectionIndex = 0;
             }
-            else if(currentDirectionIndex == -1){
+            else if (currentDirectionIndex == -1)
+            {
                 currentDirectionIndex = 3;
             }
 
@@ -46,10 +51,10 @@ public static class AdventOfCode
         Console.WriteLine(Math.Abs(accumulator['n'] - accumulator['s']) + Math.Abs(accumulator['e'] - accumulator['w']));
 
 
-        HashSet<string> coords = new() {"0,0"};
-        int[] currentCoords = {0,0};
+        HashSet<string> coords = new() { "0,0" };
+        int[] currentCoords = { 0, 0 };
 
-        foreach(string instruction in input)
+        foreach (string instruction in input)
         {
             if (instruction.StartsWith('L'))
             {
@@ -71,7 +76,8 @@ public static class AdventOfCode
 
             bool breakLoop = false;
 
-            foreach(int _ in Enumerable.Range(0, int.Parse(instruction[1..]))){
+            foreach (int _ in Enumerable.Range(0, int.Parse(instruction[1..])))
+            {
                 switch (currentDirectionIndex)
                 {
                     case 0:
@@ -94,20 +100,169 @@ public static class AdventOfCode
                         break;
                 }
 
-                if(coords.Contains(String.Join(",", currentCoords)))
+                if (coords.Contains(String.Join(",", currentCoords)))
                 {
                     breakLoop = true;
                     break;
                 }
-                else{
+                else
+                {
                     coords.Add(String.Join(",", currentCoords));
                 }
             }
 
-            if(breakLoop)
+            if (breakLoop)
                 break;
         }
 
         Console.WriteLine(String.Join(",", currentCoords));
+    }
+
+    public static void Day2(string[] data)
+    {
+        int[] coords = { 1, 1 };
+        Dictionary<string, char> coordMap = new()
+        {
+            {"0,0", '1'},
+            {"1,0", '2'},
+            {"2,0", '3'},
+            {"0,1", '4'},
+            {"1,1", '5'},
+            {"2,1", '6'},
+            {"0,2", '7'},
+            {"1,2", '8'},
+            {"2,2", '9'},
+        };
+
+        foreach (string instructions in data)
+        {
+            foreach (char direction in instructions)
+            {
+                switch (direction)
+                {
+                    case 'U':
+                        coords[1]--;
+                        break;
+                    case 'D':
+                        coords[1]++;
+                        break;
+                    case 'L':
+                        coords[0]--;
+                        break;
+                    case 'R':
+                        coords[0]++;
+                        break;
+                }
+
+                if (coords[1] < 0)
+                {
+                    coords[1] = 0;
+                }
+                else if (coords[1] > 2)
+                {
+                    coords[1] = 2;
+                }
+                else if (coords[0] < 0)
+                {
+                    coords[0] = 0;
+                }
+                else if (coords[0] > 2)
+                {
+                    coords[0] = 2;
+                }
+            }
+
+            Console.Write(coordMap[String.Join(',', coords)]);
+
+        }
+
+        Console.WriteLine();
+
+        coordMap = new()
+        {
+            {"2,0", '1'},
+            {"1,1", '2'},
+            {"2,1", '3'},
+            {"3,1", '4'},
+            {"0,2", '5'},
+            {"1,2", '6'},
+            {"2,2", '7'},
+            {"3,2", '8'},
+            {"4,2", '9'},
+            {"1,3",'A'},
+            {"2,3", 'B'},
+            {"3,3", 'C'},
+            {"2,4", 'D'},
+        };
+
+        string[] upCheck = {
+            "2,0",
+            "1,1",
+            "3,1",
+            "0,2",
+            "4,2"
+        };
+
+        string[] downCheck = {
+            "0,2",
+            "4,2",
+            "1,3",
+            "3,3",
+            "2,4"
+        };
+
+        string[] leftCheck = {
+            "2,0",
+            "1,1",
+            "0,2",
+            "1,3",
+            "2,4"
+        };
+
+        string[] rightCheck = {
+            "2,0",
+            "3,1",
+            "4,2",
+            "3,3",
+            "2,4"
+        };
+
+        coords = new int[]{0,2};
+
+        foreach (string instructions in data)
+        {
+            foreach (char direction in instructions)
+            {
+                var coordString = String.Join(',', coords);
+
+                switch (direction)
+                {
+                    case 'U':
+                        if(upCheck.Contains(coordString))
+                            break;
+                        coords[1]--;
+                        break;
+                    case 'D':
+                        if (downCheck.Contains(coordString))
+                            break;
+                        coords[1]++;
+                        break;
+                    case 'L':
+                        if (leftCheck.Contains(coordString))
+                            break;
+                        coords[0]--;
+                        break;
+                    case 'R':
+                        if (rightCheck.Contains(coordString))
+                            break;
+                        coords[0]++;
+                        break;
+                }
+            }
+
+            Console.Write(coordMap[String.Join(',', coords)]);
+        }
+
+        Console.WriteLine();
     }
 }
