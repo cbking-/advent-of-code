@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 var data = await LoadDataAsync(args[0]);
 
@@ -227,7 +228,7 @@ public static class AdventOfCode
             "2,4"
         };
 
-        coords = new int[]{0,2};
+        coords = new int[] { 0, 2 };
 
         foreach (string instructions in data)
         {
@@ -238,7 +239,7 @@ public static class AdventOfCode
                 switch (direction)
                 {
                     case 'U':
-                        if(upCheck.Contains(coordString))
+                        if (upCheck.Contains(coordString))
                             break;
                         coords[1]--;
                         break;
@@ -264,5 +265,114 @@ public static class AdventOfCode
         }
 
         Console.WriteLine();
+    }
+
+    public static void Day3(string[] data)
+    {
+        int countPossible = data.Aggregate(0, (acc, line) =>
+        {
+            int[] sides = line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToArray();
+
+            if (sides[0] + sides[1] > sides[2]
+            && sides[1] + sides[2] > sides[0]
+            && sides[0] + sides[2] > sides[1])
+                acc++;
+
+            return acc;
+        });
+
+        Console.WriteLine(countPossible);
+
+        countPossible = data.Chunk(3).Aggregate(0, (acc, chunck) =>
+        {
+            var line1 = chunck[0].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToArray();
+            var line2 = chunck[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToArray();
+            var line3 = chunck[2].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToArray();
+
+            //Triage 1
+            if (line1[0] + line2[0] > line3[0]
+            && line1[0] + line3[0] > line2[0]
+            && line2[0] + line3[0] > line1[0])
+                acc++;
+
+            //Triage 2
+            if (line1[1] + line2[1] > line3[1]
+            && line1[1] + line3[1] > line2[1]
+            && line2[1] + line3[1] > line1[1])
+                acc++;
+
+            //Triage 3
+            if (line1[2] + line2[2] > line3[2]
+            && line1[2] + line3[2] > line2[2]
+            && line2[2] + line3[2] > line1[2])
+                acc++;
+
+            return acc;
+        });
+
+        Console.WriteLine(countPossible);
+    }
+
+    public static void Day4(string[] data)
+    {
+        Dictionary<string, int> validRooms = new();
+
+        int sectorSum = data.Aggregate(0, (acc, line) =>
+        {
+            string roomName = line[..line.LastIndexOf('-')];
+            int sectorId = int.Parse(line[(line.LastIndexOf('-') + 1)..line.IndexOf('[')]);
+            string checksum = line[(line.IndexOf('[') + 1)..line.LastIndexOf(']')];
+
+            var letterGroups = roomName.GroupBy(character => character)
+            .Select(group => new
+            {
+                Count = group.Count(),
+                group.Key
+            })
+            .Where(group => group.Key != '-')
+            .OrderByDescending(group => group.Count)
+            .ThenBy(group => group.Key)
+            .Take(5);
+
+            if (checksum == String.Join("", letterGroups.Select(group => group.Key)))
+            {
+                acc += sectorId;
+                validRooms.Add(roomName, sectorId);
+            }
+
+            return acc;
+        });
+
+        Console.WriteLine(sectorSum);
+
+        foreach (KeyValuePair<string, int> room in validRooms)
+        {
+            StringBuilder builder = new();
+
+            foreach (char letter in room.Key)
+            {
+                if (letter == '-')
+                {
+                    builder.Append(' ');
+                }
+                else
+                {
+                    int move = room.Value % 26;
+
+                    char finalLetter = (char)(letter + move);
+
+                    if (letter + move > 122)
+                        finalLetter = (char)((letter + move) - 26);
+
+                    builder.Append(finalLetter);
+                }
+            }
+
+            if(builder.ToString().Contains("north"))
+            {
+                Console.WriteLine($"{builder} - {room.Value}");
+                return;
+            }
+        }
     }
 }
