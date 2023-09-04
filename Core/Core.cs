@@ -195,6 +195,13 @@ public static class Helpers
 
         return distance;
     }
+
+    public static char[] GetColumn(this string[] matrix, int columnNumber)
+    {
+        return Enumerable.Range(0, matrix.GetLength(0))
+                .Select(x => matrix[x][columnNumber])
+                .ToArray();
+    }
 }
 
 public class Graph
