@@ -107,13 +107,11 @@ public static class Day18
 
             //all number are normalized when adding
             // a split won't take a number above 5
-            Func<Pair, Pair> FindPairToExplode = (Pair pair) => new Pair();
-
-            FindPairToExplode = (Pair pair) =>
+            static Pair? FindPairToExplode(Pair pair)
             {
                 var queue = new Queue<Pair>();
                 queue.Enqueue(pair);
-                Pair node = null;
+                Pair? node = null;
                 var depth = 0;
 
                 while (queue.Count > 0)
@@ -136,24 +134,22 @@ public static class Day18
                     return null;
 
                 return node;
-            };
+            }
 
-            Func<Pair, Pair> FindPairToSplit = (Pair pair) => new Pair();
-
-            FindPairToSplit = (Pair pair) =>
+            static Pair? FindPairToSplit (Pair pair)
             {
                 var stack = new Stack<Pair>();
                 stack.Push(pair);
-                Pair node = null;
+                Pair? node = null;
 
                 while (stack.Count > 0)
                 {
                     node = stack.Pop();
 
-                    if (node.Left is int && node.Left >= 10)
+                    if (node.Left is int and >= 10)
                         return node;
 
-                    if ((node.Right is int && node.Right >= 10))
+                    if (node.Right is int and >= 10)
                     {
                         // [[9,10],20] will find 20
                         // [[14,0],25] will find 25
@@ -177,7 +173,7 @@ public static class Day18
                 }
 
                 return null;
-            };
+            }
 
             while (true)
             {
@@ -185,7 +181,7 @@ public static class Day18
 
                 while (pairToExplode is not null)
                 {
-                    var AddLeftNeighbor = (Pair pair) =>
+                    static void AddLeftNeighbor(Pair pair)
                     {
                         if (pair is null)
                             return;
@@ -223,11 +219,11 @@ public static class Day18
 
                             pair = pair.Parent;
                         }
-                    };
+                    }
 
                     AddLeftNeighbor(pairToExplode);
 
-                    var AddRightNeighbor = (Pair pair) =>
+                    static void AddRightNeighbor(Pair pair)
                     {
                         if (pair is null)
                             return;
@@ -265,17 +261,21 @@ public static class Day18
 
                             pair = pair.Parent;
                         }
-                    };
+                    }
 
                     AddRightNeighbor(pairToExplode);
 
-                    if (pairToExplode.Parent.Left is Pair && pairToExplode == pairToExplode.Parent.Left)
+                    if (pairToExplode.Parent is not null)
                     {
-                        pairToExplode.Parent.Left = 0;
+                        if (pairToExplode.Parent.Left is Pair && pairToExplode == pairToExplode.Parent.Left)
+                        {
+                            pairToExplode.Parent.Left = 0;
+                        }
+                        else
+                        {
+                            pairToExplode.Parent.Right = 0;
+                        }
                     }
-                    else
-                        pairToExplode.Parent.Right = 0;
-
                     //Console.WriteLine($"exploded:{newTree}");
 
                     pairToExplode = FindPairToExplode(newTree);
