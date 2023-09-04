@@ -1,4 +1,7 @@
-public static class Day1{
+namespace Advent2016;
+
+public static class Day1
+{
     public static void Run(string[] data)
     {
         string[] input = data[0].Split(',', StringSplitOptions.TrimEntries);

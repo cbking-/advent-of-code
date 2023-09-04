@@ -1,5 +1,4 @@
-using System.Text;
-using Core;
+namespace Advent2016;
 
 public static class Day6
 {

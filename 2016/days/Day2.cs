@@ -1,5 +1,9 @@
-public static class Day2{
-    public static void Run(string[] data){
+namespace Advent2016;
+
+public static class Day2
+{
+    public static void Run(string[] data)
+    {
         int[] coords = { 1, 1 };
         Dictionary<string, char> coordMap = new()
         {
@@ -7,7 +11,7 @@ public static class Day2{
             {"1,0", '2'},
             {"2,0", '3'},
             {"0,1", '4'},
-            {"1,1", '5'},
+            {"S1,1", '5'},
             {"2,1", '6'},
             {"0,2", '7'},
             {"1,2", '8'},

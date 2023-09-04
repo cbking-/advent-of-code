@@ -1,11 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Core;
+﻿namespace Core;
 public static class Helpers
 {
-    public static async Task<string[]> LoadDataAsync(string day, bool keepNewLines = false)
+    public static async Task<string[]> LoadDataAsync(string[] args, bool keepNewLines = false)
     {
-        using var file = new StreamReader($"inputs{Path.DirectorySeparatorChar}{day}.txt");
+        using var file = new StreamReader($"{args[0]}{Path.DirectorySeparatorChar}inputs{Path.DirectorySeparatorChar}{args[1]}.txt");
         var data = await file.ReadToEndAsync();
 
         if(keepNewLines)

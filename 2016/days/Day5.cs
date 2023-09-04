@@ -1,20 +1,21 @@
-using System.Security.Cryptography;
-using System.Text;
+namespace Advent2016;
 
-public static class Day5{
-    public static void Run(string[] data){
+public static class Day5
+{
+    public static void Run(string[] data)
+    {
         string input = data[0];
         StringBuilder password = new();
         StringBuilder passwordTwo = new("________");
 
-        foreach(int number in Enumerable.Range(0, int.MaxValue))
+        foreach (int number in Enumerable.Range(0, int.MaxValue))
         {
             using MD5 md5 = MD5.Create();
             byte[] inputBytes = Encoding.ASCII.GetBytes($"{input}{number}");
             byte[] hashBytes = md5.ComputeHash(inputBytes);
             string hexValue = Convert.ToHexString(hashBytes);
 
-            if(hexValue[..5] == "00000")
+            if (hexValue[..5] == "00000")
             {
                 if (password.Length < 8)
                 {
@@ -30,7 +31,7 @@ public static class Day5{
                 }
             }
 
-            if(password.Length == 8 && !passwordTwo.ToString().Contains('_'))
+            if (password.Length == 8 && !passwordTwo.ToString().Contains('_'))
             {
                 break;
             }
