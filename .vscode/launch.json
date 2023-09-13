@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/bin/Debug/net6.0/AdventOfCode.dll",
             "args": [
                 "2016",
-                "Day7"
+                "Day8"
             ],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
